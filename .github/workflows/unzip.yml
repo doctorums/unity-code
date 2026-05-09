@@ -1,0 +1,20 @@
+name: Unzip
+on: push
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          unzip -o unity-code-repo.zip
+          cp -r unity-repo/* .
+          rm -rf unity-repo unity-code-repo.zip
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
+          git add -A
+          git commit -m "Распаковка архива" || echo "nothing to commit"
+          git push
+      - uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./web
