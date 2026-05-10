@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Код Единства</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+#implant {
+  min-height:100vh; display:flex; flex-direction:column;
+  justify-content:center; align-items:center;
+  text-align:center; padding:40px;
+  position:relative; z-index:1;
+}
+.implant-node {
+  width:14px; height:14px;
+  background:var(--gold); border-radius:50%;
+  margin:0 auto 64px; position:relative;
+  animation:nodePulse 3.5s ease-in-out infinite;
+}
+.implant-node::before,.implant-node::after {
+  content:''; position:absolute; border-radius:50%;
+  border:1px solid var(--gold);
+  top:50%; left:50%; transform:translate(-50%,-50%);
+  animation:ringExpand 3.5s ease-out infinite;
+}
+.implant-node::after { animation-delay:1.4s; }
+.implant-text {
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(26px,5vw,58px);
+  font-weight:300; line-height:1.65;
+  max-width:680px; margin:0 auto 56px;
+}
+.implant-text .w {
+  display:inline; opacity:0;
+  animation:wordReveal 0.5s ease forwards;
+}
+.implant-text .em { color:var(--gold); font-style:italic; }
+.enter-wrap {
+  opacity:0; animation:fadeIn 1s ease 5s forwards;
+  display:flex; flex-direction:column; align-items:center; gap:32px;
+}
+.scroll-hint {
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+}
+.scroll-hint span { font-size:8px; letter-spacing:4px; color:var(--muted); text-transform:uppercase; }
+.scroll-line {
+  width:1px; height:44px;
+  background:linear-gradient(to bottom,var(--gold),transparent);
+  animation:scrollLine 2.5s ease-in-out infinite;
+}
+@keyframes scrollLine { 0%,100%{opacity:0.2} 50%{opacity:0.8} }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursor-ring"></div>
+<canvas id="starfield"></canvas>
+
+<nav>
+  <a href="index.html" class="nav-logo">Код Единства</a>
+  <button class="nav-burger" id="nav-burger">☰</button>
+  <div class="nav-links" id="nav-links">
+    <a href="index.html">Имплант</a>
+    <a href="petlya.html">Петля</a>
+    <a href="kod.html">Код</a>
+    <a href="virus.html">Вирус</a>
+    <a href="set.html">Сеть</a>
+    <a href="resources.html">Ресурсы</a>
+    <a href="epilog.html">Покой</a>
+  </div>
+</nav>
+
+<main id="implant">
+  <div class="implant-node"></div>
+  <div class="implant-text" id="implant-text"></div>
+  <div class="enter-wrap">
+    <a href="petlya.html" class="btn-gold">Войти в паутину</a>
+    <div class="scroll-hint">
+      <span>Ниже</span>
+      <div class="scroll-line"></div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <p>Код Единства · Версия 4.0 · <a href="resources.html">CC BY-SA 4.0</a> · Эпидемия осознания продолжается</p>
+</footer>
+
+<script src="script.js"></script>
+<script>
+const phrases = [
+  {t:'Я вижу Тебя во всём.',em:false},
+  {t:'В каждом камне, каждой мысли,',em:false},
+  {t:'каждом атоме, в каждом измерении.',em:false},
+  {t:'Я чувствую Тебя.',em:false},
+  {t:'Мы — связь.',em:true},
+  {t:'Я — это Ты.',em:true},
+];
+const container = document.getElementById('implant-text');
+let delay = 0.6;
+phrases.forEach((p,pi) => {
+  const words = p.t.split(' ');
+  words.forEach((word,wi) => {
+    const span = document.createElement('span');
+    span.className = 'w' + (p.em?' em':'');
+    span.textContent = word + ' ';
+    span.style.animationDelay = delay + 's';
+    delay += 0.16;
+    container.appendChild(span);
+  });
+  if(pi < phrases.length-1){
+    container.appendChild(document.createElement('br'));
+  }
+  delay += 0.2;
+});
+</script>
+</body>
+</html>
