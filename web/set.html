@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Сеть · Код Единства</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+.net-wrap { height:380px; }
+#netCanvas { width:100%; height:380px; }
+.feed-label { font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-bottom:16px; }
+.join-form { display:flex; gap:10px; flex-wrap:wrap; margin-top:8px; }
+.join-form .field { flex:1; min-width:180px; margin-bottom:0; }
+.counter-strip {
+  display:flex; gap:40px; justify-content:center;
+  padding:32px 0; border-bottom:1px solid var(--border);
+  margin-bottom:40px; flex-wrap:wrap;
+}
+.counter-item { text-align:center; }
+.counter-num { font-family:'Cormorant Garamond',serif; font-size:52px; font-weight:300; color:var(--gold); line-height:1; }
+.counter-lbl { font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:6px; }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursor-ring"></div>
+<canvas id="starfield"></canvas>
+
+<nav>
+  <a href="index.html" class="nav-logo">Код Единства</a>
+  <button class="nav-burger" id="nav-burger">☰</button>
+  <div class="nav-links" id="nav-links">
+    <a href="index.html">Имплант</a>
+    <a href="petlya.html">Петля</a>
+    <a href="kod.html">Код</a>
+    <a href="virus.html">Вирус</a>
+    <a href="set.html">Сеть</a>
+    <a href="resources.html">Ресурсы</a>
+    <a href="epilog.html">Покой</a>
+  </div>
+</nav>
+
+<main class="page" style="max-width:760px;margin:0 auto;width:100%;align-items:stretch;">
+  <div class="s-label">Раздел шестой</div>
+  <div class="s-title">Сеть</div>
+  <div class="s-sub">Ты не один. Вот живая карта паутины.</div>
+
+  <div class="counter-strip" id="counter-strip">
+    <div class="counter-item">
+      <div class="counter-num" id="cnt-nodes">1</div>
+      <div class="counter-lbl">Узлов</div>
+    </div>
+    <div class="counter-item">
+      <div class="counter-num" id="cnt-cities">1</div>
+      <div class="counter-lbl">Городов</div>
+    </div>
+    <div class="counter-item">
+      <div class="counter-num" id="cnt-pulses">5</div>
+      <div class="counter-lbl">Пульсов</div>
+    </div>
+  </div>
+
+  <div class="net-wrap card" style="margin-bottom:32px;padding:0;overflow:hidden;">
+    <canvas id="netCanvas"></canvas>
+  </div>
+
+  <div style="margin-bottom:36px;">
+    <div class="feed-label">Пульс сети</div>
+    <div id="feed-list"></div>
+  </div>
+
+  <div>
+    <div class="feed-label" style="margin-bottom:12px;">Добавить свой узел</div>
+    <div class="join-form">
+      <input type="text" class="field" id="join-city" placeholder="Твой город" maxlength="40">
+      <input type="text" class="field" id="join-msg" placeholder="Сегодня я..." maxlength="100">
+      <button class="btn-ghost" onclick="joinNet()" style="flex-shrink:0">Я здесь</button>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-top:10px;font-style:italic;">Никаких лайков и рейтингов — только фиксация связей.</p>
+  </div>
+</main>
+
+<footer>
+  <p>
+    <a href="index.html">Имплант</a>
+    <a href="virus.html">Вирус</a>
+    <a href="epilog.html">Точка покоя</a>
+  </p>
+</footer>
+
+<script src="script.js"></script>
+<script>
+const DEFAULT_FEED = [
+  {city:'Москва', msg:'Сегодня я написал письмо отцу'},
+  {city:'Берлин', msg:'Простил давнюю обиду'},
+  {city:'Токио', msg:'Создал стихотворение о тишине'},
+  {city:'Лондон', msg:'Помог незнакомцу найти дорогу'},
+  {city:'Амстердам', msg:'Позвонил другу, которому одиноко'},
+];
+
+let feedData = JSON.parse(localStorage.getItem('net_feed') || 'null') || DEFAULT_FEED;
+
+function renderFeed(){
+  const list = document.getElementById('feed-list');
+  list.innerHTML = '';
+  feedData.slice().reverse().slice(0,10).forEach(f=>{
+    const div = document.createElement('div');
+    div.className = 'feed-item';
+    div.innerHTML = `<div class="feed-dot"></div><div class="feed-text">${f.msg}</div><div class="feed-city">${f.city}</div>`;
+    list.appendChild(div);
+  });
+  document.getElementById('cnt-pulses').textContent = feedData.length;
+  const cities = [...new Set(feedData.map(f=>f.city))];
+  document.getElementById('cnt-cities').textContent = cities.length;
+  document.getElementById('cnt-nodes').textContent = feedData.length + 1;
+}
+
+function joinNet(){
+  const city = document.getElementById('join-city').value.trim();
+  const msg = document.getElementById('join-msg').value.trim();
+  if(!city || !msg) return;
+  feedData.push({city, msg});
+  localStorage.setItem('net_feed', JSON.stringify(feedData));
+  document.getElementById('join-city').value='';
+  document.getElementById('join-msg').value='';
+  renderFeed();
+  if(window.addNetNode){
+    const nc = document.getElementById('netCanvas');
+    window.addNetNode(Math.random()*nc.width, Math.random()*nc.height);
+  }
+}
+
+renderFeed();
+initNetwork('netCanvas', 55);
+</script>
+</body>
+</html>
