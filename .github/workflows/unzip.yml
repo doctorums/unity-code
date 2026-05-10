@@ -1,21 +1,26 @@
-name: Unzip
-on: push
+name: Deploy
+on:
+  push:
+    branches: [main]
 permissions:
   contents: write
 jobs:
-  unzip:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          unzip -o unity-code-repo.zip
-          cp -r unity-repo/* .
-          rm -rf unity-repo unity-code-repo.zip
-          git config user.email "action@github.com"
-          git config user.name "GitHub Action"
-          git add -A
-          git diff --staged --quiet || git commit -m "Распаковка архива"
-          git push
+      - name: Unzip if archive exists
+        run: |
+          if [ -f unity-code-repo.zip ]; then
+            unzip -o unity-code-repo.zip
+            cp -r unity-repo/* .
+            rm -rf unity-repo unity-code-repo.zip
+            git config user.email "action@github.com"
+            git config user.name "GitHub Action"
+            git add -A
+            git diff --staged --quiet || git commit -m "Распаковка архива"
+            git push
+          fi
       - uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
