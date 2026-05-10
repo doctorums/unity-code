@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ресурсы · Код Единства</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursor-ring"></div>
+<canvas id="starfield"></canvas>
+
+<nav>
+  <a href="index.html" class="nav-logo">Код Единства</a>
+  <button class="nav-burger" id="nav-burger">☰</button>
+  <div class="nav-links" id="nav-links">
+    <a href="index.html">Имплант</a>
+    <a href="petlya.html">Петля</a>
+    <a href="kod.html">Код</a>
+    <a href="virus.html">Вирус</a>
+    <a href="set.html">Сеть</a>
+    <a href="resources.html">Ресурсы</a>
+    <a href="epilog.html">Покой</a>
+  </div>
+</nav>
+
+<main class="page" style="max-width:680px;margin:0 auto;width:100%;align-items:stretch;">
+  <div class="s-label">Раздел седьмой</div>
+  <div class="s-title">Ресурсы</div>
+  <div class="s-sub">Всё для офлайн-использования и дальнейшего распространения.</div>
+
+  <div id="res-list"></div>
+
+  <div style="margin-top:60px;padding-top:48px;border-top:1px solid var(--border);text-align:center;">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:13px;letter-spacing:2px;color:var(--gold);opacity:0.6;margin-bottom:16px;">doctorums.github.io/unity-code</div>
+    <button class="btn-gold" onclick="copyLink()">Скопировать ссылку и передать дальше</button>
+  </div>
+
+  <div style="margin-top:60px;padding-top:48px;border-top:1px solid var(--border);">
+    <div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:20px;">Лицензия</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:300;line-height:1.9;color:var(--muted);">
+      Код Единства распространяется по лицензии <span style="color:var(--gold)">CC BY-SA 4.0</span>.<br>
+      Копируй. Адаптируй. Распространяй.<br>
+      Сохраняй авторство. Сохраняй открытость.
+    </div>
+  </div>
+</main>
+
+<footer>
+  <p>
+    <a href="index.html">Имплант</a>
+    <a href="https://github.com/doctorums/unity-code" target="_blank">GitHub</a>
+    <a href="epilog.html">Точка покоя</a>
+  </p>
+</footer>
+
+<script src="script.js"></script>
+<script>
+const resources = [
+  {
+    name:'Код 5.0 · Полное собрание',
+    desc:'PDF со всеми текстами ядра — от Семени до Формулы',
+    btn:'Скачать PDF',
+    action: ()=> window.open('assets/pdf/kod-5.pdf','_blank')
+  },
+  {
+    name:'Вирусный пакет · ZIP',
+    desc:'Молитва, манифест, вопросы, ритуал — готово к распространению',
+    btn:'Скачать ZIP',
+    action: ()=> window.open('assets/pdf/virus-pack.zip','_blank')
+  },
+  {
+    name:'GitHub репозиторий',
+    desc:'Открытый код портала · Сделай fork · Стань со-творцом',
+    btn:'Открыть',
+    action: ()=> window.open('https://github.com/doctorums/unity-code','_blank')
+  },
+  {
+    name:'Как создать свой узел',
+    desc:'Пошаговая инструкция fork и публикации на GitHub Pages',
+    btn:'Читать',
+    action: ()=> window.open('https://github.com/doctorums/unity-code/blob/main/docs/fork-guide.md','_blank')
+  },
+  {
+    name:'Аудио-имплант',
+    desc:'3 минуты · голос + тишина · для медитации и утренней настройки',
+    btn:'Скоро',
+    action: ()=> alert('В разработке. Следи за обновлениями.')
+  },
+];
+
+const list = document.getElementById('res-list');
+resources.forEach(r=>{
+  const row = document.createElement('div');
+  row.className = 'res-row';
+  row.innerHTML = `
+    <div>
+      <div class="res-name">${r.name}</div>
+      <div class="res-desc">${r.desc}</div>
+    </div>
+    <button class="btn-ghost" onclick="(${r.action})()">${r.btn}</button>`;
+  list.appendChild(row);
+});
+
+function copyLink(){
+  navigator.clipboard.writeText('https://doctorums.github.io/unity-code').then(()=>{
+    const btn = document.querySelector('.btn-gold');
+    btn.textContent = 'Скопировано ✓';
+    setTimeout(()=> btn.textContent='Скопировать ссылку и передать дальше', 2000);
+  });
+}
+</script>
+</body>
+</html>
