@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>UNITYCODE — Имплант Связи</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Unbounded:wght@200;400&display=swap" rel="stylesheet">
-<style> 
+<style>
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{width:100%;height:100%;overflow:hidden;}
 body{font-family:'Share Tech Mono',monospace;cursor:crosshair;background:#061120;}
@@ -83,7 +83,7 @@ nav a:hover{color:rgba(255,255,255,0.85);transform:scale(1.45);letter-spacing:0.
     </div>
     <div class="label" id="lbl"><span class="wl">Имплант связи / Точка входа</span></div>
     <h1 class="question" id="q"><span class="wl">Ощущаешь ли ты себя</span><br><em class="wl">отдельной точкой</em><br><span class="wl">или частью процесса?</span></h1>
-    <span class="btn" id="btn" onclick="alert('BTN')" ontouchend="alert('BTN')"><span>[ Войти в сеть ]</span></span>
+    <span class="btn" id="btn"><span>[ Войти в сеть ]</span></span>
     <p class="disclaimer" id="disc"><span class="wl">Некоммерческий научно-художественный эксперимент.</span><br><span class="wl">Мы не собираем персональные данные. Только сигнал.</span><br><span class="wl">Сгенерированный контент не претендует на объективную истинность.</span></p>
   </div>
 </div>
@@ -471,83 +471,100 @@ let prev=performance.now();
   var frame=document.getElementById('petlya-frame');
 
   function go(e){
-    e.preventDefault();
-    alert('GO');
-    if(active)return;
-    active=true;
-    startTime=performance.now();
-    frame.src='petlya.html';
-    tc.style.display='block';
+    if(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if(active) return;
+    active = true;
+    startTime = performance.now();
+    // Пытаемся загрузить petlya.html, но если его нет – анимация всё равно идёт
+    frame.src = 'petlya.html';
+    tc.style.display = 'block';
+    // Принудительное завершение, если iframe не загрузился за 3 секунды
+    setTimeout(function() {
+      if (active && performance.now() - startTime > 3000 && !frame.classList.contains('visible')) {
+        frame.classList.add('visible');
+        document.querySelector('.ui').style.opacity = '0';
+        document.querySelector('.version').style.opacity = '0';
+        document.querySelector('nav').style.opacity = '0';
+        setTimeout(function() { tc.style.display = 'none'; }, 500);
+      }
+    }, 3000);
   }
-  window.tunnelGo=go;
+  window.tunnelGo = go;
 
-  document.getElementById('btn').addEventListener('click', go);
-  document.getElementById('btn').addEventListener('touchend', go, {passive:false});
+  // Убираем все старые обработчики и вешаем только наши
+  var btn = document.getElementById('btn');
+  // Удаляем inline атрибуты (они уже удалены из HTML, но на всякий случай)
+  btn.removeAttribute('onclick');
+  btn.removeAttribute('ontouchend');
+  btn.addEventListener('click', go);
+  btn.addEventListener('touchend', go, {passive: false});
+
+  // Если в навигации есть #navPetlya (нет, но оставим)
   var np=document.getElementById('navPetlya');
   if(np) np.addEventListener('click', go);
 
   function tunnelDraw(now){
-    if(!active)return;
-    var p=Math.min((now-startTime)/DUR,1);
-    var ease=1-Math.pow(1-p,2.5);
-    var W=tc.width, H=tc.height;
-    var cx=W/2, cy=H/2;
-    var maxLen=Math.sqrt(cx*cx+cy*cy)*1.5;
+    if(!active) return;
+    var p = Math.min((now - startTime) / DUR, 1);
+    var ease = 1 - Math.pow(1 - p, 2.5);
+    var W = tc.width, H = tc.height;
+    var cx = W/2, cy = H/2;
+    var maxLen = Math.sqrt(cx*cx + cy*cy) * 1.5;
 
-    tctx.clearRect(0,0,W,H);
+    tctx.clearRect(0, 0, W, H);
 
     // линии от краёв к центру
     tctx.save();
-    for(var i=0;i<48;i++){
-      var angle=(i/48)*Math.PI*2;
-      var toLen=maxLen*(1-ease);
+    for(var i = 0; i < 48; i++){
+      var angle = (i / 48) * Math.PI * 2;
+      var toLen = maxLen * (1 - ease);
       tctx.beginPath();
-      tctx.moveTo(cx+Math.cos(angle)*maxLen, cy+Math.sin(angle)*maxLen);
-      tctx.lineTo(cx+Math.cos(angle)*toLen,  cy+Math.sin(angle)*toLen);
-      tctx.strokeStyle='rgba(90,185,250,'+Math.min(0.9,ease*2)+')';
-      tctx.lineWidth=Math.max(0.3,(1-ease)*2+0.3);
+      tctx.moveTo(cx + Math.cos(angle) * maxLen, cy + Math.sin(angle) * maxLen);
+      tctx.lineTo(cx + Math.cos(angle) * toLen,  cy + Math.sin(angle) * toLen);
+      tctx.strokeStyle = 'rgba(90,185,250,' + Math.min(0.9, ease * 2) + ')';
+      tctx.lineWidth = Math.max(0.3, (1 - ease) * 2 + 0.3);
       tctx.stroke();
     }
     tctx.restore();
 
     // центральная точка
-    if(ease>0.1){
-      var r=Math.max(1,50*(1-ease));
-      var g=tctx.createRadialGradient(cx,cy,0,cx,cy,r);
-      g.addColorStop(0,'rgba(255,255,255,'+ease+')');
-      g.addColorStop(1,'rgba(90,185,250,0)');
-      tctx.fillStyle=g;
-      tctx.beginPath(); tctx.arc(cx,cy,r,0,Math.PI*2); tctx.fill();
+    if(ease > 0.1){
+      var r = Math.max(1, 50 * (1 - ease));
+      var g = tctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      g.addColorStop(0, 'rgba(255,255,255,' + ease + ')');
+      g.addColorStop(1, 'rgba(90,185,250,0)');
+      tctx.fillStyle = g;
+      tctx.beginPath(); tctx.arc(cx, cy, r, 0, Math.PI*2); tctx.fill();
     }
 
     // вспышка → темнота → iframe
-    if(ease>0.75){
-      var fa=(ease-0.75)/0.25;
-      if(fa<=0.5){
-        tctx.fillStyle='rgba(255,255,255,'+(fa*2)+')';
-        tctx.fillRect(0,0,W,H);
+    if(ease > 0.75){
+      var fa = (ease - 0.75) / 0.25;
+      if(fa <= 0.5){
+        tctx.fillStyle = 'rgba(255,255,255,' + (fa * 2) + ')';
+        tctx.fillRect(0, 0, W, H);
       } else {
-        tctx.fillStyle='rgba(255,255,255,'+(1-(fa-0.5)*2)+')';
-        tctx.fillRect(0,0,W,H);
-        tctx.fillStyle='rgba(6,17,32,'+((fa-0.5)*2)+')';
-        tctx.fillRect(0,0,W,H);
-        // показываем iframe под темнотой
-        if(fa>0.6) frame.classList.add('visible');
+        tctx.fillStyle = 'rgba(255,255,255,' + (1 - (fa - 0.5) * 2) + ')';
+        tctx.fillRect(0, 0, W, H);
+        tctx.fillStyle = 'rgba(6,17,32,' + ((fa - 0.5) * 2) + ')';
+        tctx.fillRect(0, 0, W, H);
+        if(fa > 0.6) frame.classList.add('visible');
       }
     }
 
     // UI уходит
-    var ui=Math.max(0,1-ease*2.5).toFixed(2);
-    document.querySelector('.ui').style.opacity=ui;
-    document.querySelector('.version').style.opacity=ui;
-    document.querySelector('nav').style.opacity=ui;
+    var ui = Math.max(0, 1 - ease * 2.5).toFixed(2);
+    document.querySelector('.ui').style.opacity = ui;
+    document.querySelector('.version').style.opacity = ui;
+    document.querySelector('nav').style.opacity = ui;
 
-    if(p>=1) tc.style.display='none';
+    if(p >= 1) tc.style.display = 'none';
   }
 
-  
-  // вписываем в loop через глобал
-  window._tunnelDraw=tunnelDraw;
+  window._tunnelDraw = tunnelDraw;
 })();
 </script>
 </body>
