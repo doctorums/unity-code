@@ -1,173 +1,20 @@
 <!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Тест туннеля</title>
+<html>
+<head><meta charset="UTF-8"><title>Тест</title>
 <style>
-  body {
-    margin: 0;
-    min-height: 100vh;
-    background: #061120;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: monospace;
-  }
-  #btn {
-    padding: 1rem 2rem;
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.3);
-    color: white;
-    cursor: pointer;
-    font-size: 1.2rem;
-    transition: 0.3s;
-  }
-  #btn:hover {
-    background: rgba(255,255,255,0.2);
-    transform: scale(1.05);
-  }
-  canvas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 100;
-    display: none;
-  }
-  .ui {
-    text-align: center;
-    z-index: 10;
-  }
-  iframe {
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    border: none;
-    opacity: 0;
-    pointer-events: none;
-    z-index: 200;
-    transition: opacity 0.6s;
-  }
-  iframe.visible {
-    opacity: 1;
-    pointer-events: auto;
-  }
+  body { background: black; color: lime; font-family: monospace; text-align: center; padding-top: 50px; }
+  button { font-size: 2rem; padding: 20px; background: cyan; border: none; cursor: pointer; }
 </style>
 </head>
 <body>
-<div class="ui">
-  <h1>Имплант связи</h1>
-  <button id="btn">Войти в сеть</button>
-</div>
-<canvas id="tunnelCanvas"></canvas>
-<iframe id="petlyaFrame" src="about:blank"></iframe>
-
+<h1>ТЕСТОВАЯ СТРАНИЦА</h1>
+<button id="btn">НАЖМИ МЕНЯ</button>
 <script>
-  (function() {
-    const canvas = document.getElementById('tunnelCanvas');
-    const ctx = canvas.getContext('2d');
-    const frame = document.getElementById('petlyaFrame');
-    let active = false;
-    let startTime = 0;
-    const DUR = 2500; // длительность анимации 2.5 сек
-
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    function go(e) {
-      if (e) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-      if (active) return;
-      active = true;
-      startTime = performance.now();
-      canvas.style.display = 'block';
-      console.log('Туннель запущен');
-    }
-
-    const btn = document.getElementById('btn');
-    btn.addEventListener('click', go);
-    btn.addEventListener('touchend', go, {passive: false});
-
-    function animate(now) {
-      if (!active) {
-        requestAnimationFrame(animate);
-        return;
-      }
-      const p = Math.min((now - startTime) / DUR, 1);
-      const ease = 1 - Math.pow(1 - p, 2.5); // плавное замедление
-
-      const w = canvas.width, h = canvas.height;
-      const cx = w/2, cy = h/2;
-      const maxLen = Math.hypot(cx, cy) * 1.5;
-
-      ctx.clearRect(0, 0, w, h);
-
-      // Рисуем линии от краёв к центру
-      for (let i = 0; i < 48; i++) {
-        const angle = (i / 48) * Math.PI * 2;
-        const toLen = maxLen * (1 - ease);
-        ctx.beginPath();
-        ctx.moveTo(cx + Math.cos(angle) * maxLen, cy + Math.sin(angle) * maxLen);
-        ctx.lineTo(cx + Math.cos(angle) * toLen, cy + Math.sin(angle) * toLen);
-        ctx.strokeStyle = `rgba(90, 185, 250, ${Math.min(0.9, ease * 2)})`;
-        ctx.lineWidth = Math.max(0.3, (1 - ease) * 2 + 0.3);
-        ctx.stroke();
-      }
-
-      // Центральная вспышка
-      if (ease > 0.1) {
-        const r = Math.max(1, 50 * (1 - ease));
-        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-        grad.addColorStop(0, `rgba(255, 255, 255, ${ease})`);
-        grad.addColorStop(1, `rgba(90, 185, 250, 0)`);
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Фаза ослепления и затемнения
-      if (ease > 0.75) {
-        const fa = (ease - 0.75) / 0.25; // от 0 до 1
-        if (fa <= 0.5) {
-          ctx.fillStyle = `rgba(255, 255, 255, ${fa * 2})`;
-          ctx.fillRect(0, 0, w, h);
-        } else {
-          ctx.fillStyle = `rgba(255, 255, 255, ${1 - (fa - 0.5) * 2})`;
-          ctx.fillRect(0, 0, w, h);
-          ctx.fillStyle = `rgba(6, 17, 32, ${(fa - 0.5) * 2})`;
-          ctx.fillRect(0, 0, w, h);
-          if (fa > 0.6) {
-            frame.classList.add('visible');
-          }
-        }
-      }
-
-      // Скрываем UI по мере прогресса
-      const uiOpacity = Math.max(0, 1 - ease * 2.5);
-      document.querySelector('.ui').style.opacity = uiOpacity;
-
-      if (p >= 1) {
-        active = false;
-        canvas.style.display = 'none';
-        console.log('Туннель завершён');
-      }
-
-      requestAnimationFrame(animate);
-    }
-
-    requestAnimationFrame(animate);
-  })();
+  document.getElementById('btn').onclick = function(e) {
+    e.preventDefault();
+    alert('Кнопка сработала! Анимация должна запуститься, но пока просто alert');
+    // Здесь потом вставим анимацию
+  };
 </script>
 </body>
 </html>
