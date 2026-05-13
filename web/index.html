@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест кнопки</title>
+    <style>
+        body {
+            background: black;
+            color: lime;
+            font-family: monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            gap: 30px;
+        }
+        button {
+            font-size: 2rem;
+            padding: 20px 40px;
+            background: cyan;
+            border: none;
+            cursor: pointer;
+        }
+        #status {
+            font-size: 1.5rem;
+            background: #222;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <button id="btn">НАЖМИ МЕНЯ</button>
+    <div id="status">Ожидание нажатия...</div>
+
+    <script>
+        // Самая простая проверка
+        console.log('Скрипт загружен!');
+        document.getElementById('status').innerText = 'Скрипт загружен. Жду нажатия.';
+
+        document.getElementById('btn').onclick = function(e) {
+            e.preventDefault();
+            document.getElementById('status').innerText = 'КНОПКА НАЖАТА! ' + new Date().toLocaleTimeString();
+            alert('Кнопка сработала!');
+        };
+    </script>
+</body>
+</html>

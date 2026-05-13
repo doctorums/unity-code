@@ -9,9 +9,20 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{width:100%;height:100%;overflow:hidden;}
 body{font-family:'Share Tech Mono',monospace;cursor:crosshair;background:#061120;}
-canvas{position:fixed;top:0;left:0;width:100%;height:100%;display:block;z-index:0;pointer-events:none;touch-action:none;}
+canvas{position:fixed;top:0;left:0;width:100%;height:100%;display:block;pointer-events:none;touch-action:none;}
+#c{z-index:0;}
+#cw{z-index:1;}
+#petlya-frame{
+  position:fixed;inset:0;z-index:50;
+  width:100%;height:100%;border:none;
+  opacity:0;pointer-events:none;
+  transition:opacity 0.6s ease;
+}
+#petlya-frame.visible{opacity:1;pointer-events:all;}
+#tunnel-canvas{position:fixed;inset:0;z-index:60;pointer-events:none;}
 .ui{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;}
 .ui a{pointer-events:all;}
+.ui span#btn{pointer-events:all;cursor:pointer;}
 .version{position:fixed;top:1.4rem;left:1.6rem;font-size:0.55rem;letter-spacing:0.22em;color:rgba(255,255,255,0.28);z-index:20;}
 nav{position:fixed;top:1.4rem;right:1.6rem;display:flex;gap:1.6rem;z-index:20;}
 nav a{font-size:0.55rem;letter-spacing:0.15em;color:rgba(255,255,255,0.28);text-decoration:none;text-transform:uppercase;transition:color 0.3s,transform 0.3s ease,letter-spacing 0.3s;pointer-events:all;display:inline-block;transform-origin:center bottom;cursor:pointer;-webkit-tap-highlight-color:rgba(255,255,255,0.1);padding:0.5rem;}
@@ -26,15 +37,39 @@ nav a:hover{color:rgba(255,255,255,0.85);transform:scale(1.45);letter-spacing:0.
 .label{font-size:0.52rem;letter-spacing:0.32em;color:rgba(255,255,255,0.32);text-transform:uppercase;margin-bottom:1rem;will-change:transform;opacity:0;animation:fi 1.2s ease 0.2s forwards;}
 .question{font-family:'Unbounded',sans-serif;font-weight:400;font-size:clamp(0.95rem,2.6vw,1.4rem);line-height:1.8;color:rgba(255,255,255,0.9);margin-bottom:3rem;text-shadow:0 2px 30px rgba(0,20,60,0.9);will-change:transform;opacity:0;animation:fi 1.5s ease 0.6s forwards;}
 .question em{font-style:normal;color:rgba(160,215,255,0.92);}
-.btn{display:inline-block;padding:0.85rem 2.4rem;border:1px solid rgba(255,255,255,0.22);color:rgba(255,255,255,0.65);font-family:'Share Tech Mono',monospace;font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;text-decoration:none;background:rgba(255,255,255,0.04);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);opacity:0;animation:fi 1.5s ease 1.3s forwards;transition:all 0.3s;will-change:transform;}
-.btn:hover{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.45);color:rgba(255,255,255,0.9);}
-.disclaimer{margin-top:3.5rem;font-size:0.58rem;color:rgba(255,255,255,0.15);line-height:2.1;will-change:transform;opacity:0;animation:fi 2s ease 2.2s forwards;}
+.btn{display:inline-block;padding:0.85rem 2.4rem;border:1px solid rgba(255,255,255,0.22);color:rgba(255,255,255,0.65);font-family:'Share Tech Mono',monospace;font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;text-decoration:none;background:rgba(255,255,255,0.04);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);opacity:0;animation:fi 1.5s ease 1.3s forwards;transition:all 0.3s;will-change:transform;cursor:pointer;pointer-events:all;}
+.btn .wl{pointer-events:none;}
+.disclaimer{margin-top:3.5rem;font-size:0.58rem;color:rgba(255,255,255,0.15);line-height:2.1;will-change:transform;opacity:0;animation:fi 2s ease 2.2s forwards;cursor:pointer;pointer-events:all;transition:transform 0.3s ease, color 0.3s ease;}
+.disclaimer:hover{transform:scale(1.3);color:rgba(255,255,255,0.6);}
 @keyframes fi{to{opacity:1;}}
 .wl{display:inline-block;will-change:transform;}
+@keyframes vt-out{
+  0%  {opacity:1;filter:brightness(1);}
+  40% {opacity:1;filter:brightness(4) saturate(0);}
+  100%{opacity:0;filter:brightness(0);}
+}
+::view-transition-old(root){animation:vt-out 1.2s ease forwards;}
+::view-transition-new(root){animation:pageIn 1.5s ease forwards;}
+@keyframes pageIn{
+  0%  {opacity:0;filter:brightness(0);}
+  30% {opacity:1;filter:brightness(4) saturate(0);}
+  100%{opacity:1;filter:brightness(1) saturate(1);}
+}
+#overlay{position:fixed;inset:0;z-index:50;pointer-events:none;opacity:0;}
+#overlay.active{animation:tunnelIn 8s ease-in forwards;}
+@keyframes tunnelIn{
+  0%  {opacity:0;background:radial-gradient(ellipse at center,rgba(90,185,250,0) 0%,rgba(6,17,32,0) 100%);}
+  8%  {opacity:1;}
+  50% {background:radial-gradient(ellipse at center,rgba(90,185,250,0.25) 5%,rgba(6,17,32,0.5) 70%,rgba(6,17,32,0.9) 100%);}
+  85% {background:radial-gradient(ellipse at center,rgba(255,255,255,0.8) 0%,rgba(90,185,250,0.5) 25%,rgba(6,17,32,1) 100%);}
+  100%{opacity:1;background:radial-gradient(ellipse at center,rgba(255,255,255,1) 0%,rgba(255,255,255,1) 100%);}
+}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<canvas id="cw"></canvas>
+<canvas id="tunnel-canvas"></canvas>
 <div class="version">UNITYCODE</div>
 <nav>
   <a href="virus.html">Диагностика</a>
@@ -44,68 +79,65 @@ nav a:hover{color:rgba(255,255,255,0.85);transform:scale(1.45);letter-spacing:0.
 </nav>
 <div class="ui">
   <div class="center">
-    <div class="node"><div class="node-core"></div></div>
+    <div class="node">
+      <div class="node-core"></div>
+    </div>
     <div class="label" id="lbl"><span class="wl">Имплант связи / Точка входа</span></div>
     <h1 class="question" id="q"><span class="wl">Ощущаешь ли ты себя</span><br><em class="wl">отдельной точкой</em><br><span class="wl">или частью процесса?</span></h1>
-    <a href="petlya.html" class="btn" id="btn"><span class="wl">[ Войти в сеть ]</span></a>
-    <p class="disclaimer" id="disc"><span class="wl">Некоммерческий научно-художественный эксперимент.</span><br><span class="wl">Мы не собираем персональные данные. Только сигнал.</span><br><span class="wl">Сгенерированный контент не претендует на объективную истинность.</span></p>
+    <span class="btn" id="btn" onclick="tunnelGo(event)" ontouchend="tunnelGo(event)"><span class="wl">[ Войти в сеть ]</span></span>
+    <p class="disclaimer" id="disc">Некоммерческий научно-художественный эксперимент.<br>Мы не собираем персональные данные. Только сигнал.<br>Сгенерированный контент не претендует на объективную истинность.</p>
   </div>
 </div>
 <script>
-const cv=document.getElementById('c'),ctx=cv.getContext('2d');
-let W,H,cols,rows,buf0,buf1,damp;
-const CELL=4,BORDER=14;
+// ── Canvas: #c — фон/звёзды/галактика/комета/кольца
+//            #cw — волна (отдельный слой, putImageData не затирает #c)
+const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+const cw=document.getElementById('cw'), ctxW=cw.getContext('2d');
 
-// ── Offscreen canvases ─────────────────────────────────────────────────────
-const offStars=new OffscreenCanvas(1,1);
-const offGalaxy=new OffscreenCanvas(1,1);
-const offWave=new OffscreenCanvas(1,1);   // волна отдельно — не затирает нижние слои
-const octxS=offStars.getContext('2d');
-const octxG=offGalaxy.getContext('2d');
-const octxW=offWave.getContext('2d');
-let lastGalaxyAngle=-999,galaxyDirty=true;
+let W,H,cols,rows,buf0,buf1,damp;
+const CELL=4, BORDER=14;
+let waveImg=null;
 
 // ── Звёзды ────────────────────────────────────────────────────────────────
 const stars=Array.from({length:500},()=>({
-  x:Math.random(),y:Math.pow(Math.random(),2.5)*.42,
+  x:Math.random(), y:Math.pow(Math.random(),2.5)*.42,
   r:Math.random()<.15?1.5:1,
   a:.15+Math.random()*.55,
   sp:.3+Math.random()*1.1,
   ph:Math.random()*Math.PI*2
 }));
 
-// ── Предвычисленный шум ───────────────────────────────────────────────────
+// ── Ветер ─────────────────────────────────────────────────────────────────
+const windBands=Array.from({length:7},()=>({
+  x:Math.random(),y:Math.random(),
+  vx:(Math.random()-.5)*.00006, vy:(Math.random()-.5)*.00005,
+  amp:.1+Math.random()*.2, ph:Math.random()*Math.PI*2,
+  wanderPh:Math.random()*Math.PI*2
+}));
 const WIND_NOISE=new Float32Array(256).map(()=>Math.random()-.5);
 let windNI=0;
 function rnd(){return WIND_NOISE[(windNI++)&255];}
-
 let windT=0;
-const windBands=Array.from({length:7},()=>({
-  x:Math.random(),y:Math.random(),
-  vx:(Math.random()-.5)*.00006,vy:(Math.random()-.5)*.00005,
-  amp:.1+Math.random()*.2,ph:Math.random()*Math.PI*2,
-  wanderPh:Math.random()*Math.PI*2
-}));
 
+// ── Кольца / комета ───────────────────────────────────────────────────────
 const rings=[];
-let cometT=null,cometParams={};
+let cometT=null, cometParams={};
 
 // ── Init ──────────────────────────────────────────────────────────────────
 function init(){
-  W=cv.width=window.innerWidth;H=cv.height=window.innerHeight;
-  offStars.width=W;offStars.height=H;
-  offGalaxy.width=W;offGalaxy.height=H;
-  offWave.width=W;offWave.height=H;
-  cols=Math.ceil(W/CELL)+2;rows=Math.ceil(H/CELL)+2;
-  buf0=new Float32Array(cols*rows);buf1=new Float32Array(cols*rows);
+  W=cv.width=cw.width=window.innerWidth;
+  H=cv.height=cw.height=window.innerHeight;
+  cols=Math.ceil(W/CELL)+2; rows=Math.ceil(H/CELL)+2;
+  buf0=new Float32Array(cols*rows);
+  buf1=new Float32Array(cols*rows);
   damp=new Float32Array(cols*rows);
   for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
     const ex=Math.min(c,cols-1-c,BORDER)/BORDER;
     const ey=Math.min(r,rows-1-r,BORDER)/BORDER;
-    const e=Math.min(ex,ey);const s=e<1?e*e*(3-2*e):1;
-    damp[r*cols+c]=0.955*s;
+    const e=Math.min(ex,ey); const s=e<1?e*e*(3-2*e):1;
+    damp[r*cols+c]=0.945*s;
   }
-  galaxyDirty=true;
+  waveImg=ctxW.createImageData(W,H);
   invalidateRectCache();
 }
 
@@ -121,12 +153,26 @@ function step(){
   const tmp=buf0;buf0=buf1;buf1=tmp;
 }
 
-function drop(x,y,s,rad){
-  const cc=Math.round(x/CELL),rr=Math.round(y/CELL);
+function dropImmediate(x,y,s,rad){
+  const cc=Math.round(x/CELL), rr=Math.round(y/CELL);
   for(let dr=-rad;dr<=rad;dr++)for(let dc=-rad;dc<=rad;dc++){
-    const dist=Math.sqrt(dr*dr+dc*dc);if(dist>rad)continue;
-    const c=cc+dc,r=rr+dr;
+    const dist=Math.sqrt(dr*dr+dc*dc); if(dist>rad)continue;
+    const c=cc+dc, r=rr+dr;
     if(c>0&&c<cols-1&&r>0&&r<rows-1)buf0[idx(c,r)]+=s*(1-dist/(rad+1));
+  }
+}
+
+// Плавный вброс энергии — растягиваем импульс на несколько кадров
+const pendingDrops=[];
+function drop(x,y,s,rad,steps=6){
+  pendingDrops.push({x,y,s:s/steps,rad,left:steps});
+}
+
+function flushDrops(){
+  for(let i=pendingDrops.length-1;i>=0;i--){
+    const d=pendingDrops[i];
+    dropImmediate(d.x,d.y,d.s,d.rad);
+    if(--d.left<=0)pendingDrops.splice(i,1);
   }
 }
 
@@ -138,23 +184,23 @@ function liveWater(dt,t){
     wb.vx+=Math.sin(wb.wanderPh*1.3)*0.000008;
     wb.vy+=Math.cos(wb.wanderPh)*0.000008;
     const spd=Math.sqrt(wb.vx*wb.vx+wb.vy*wb.vy);
-    if(spd>0.00012){wb.vx*=0.00012/spd;wb.vy*=0.00012/spd;}
-    wb.x+=wb.vx;wb.y+=wb.vy;
-    if(wb.x<-.1)wb.x=1.1;if(wb.x>1.1)wb.x=-.1;
-    if(wb.y<-.1)wb.y=1.1;if(wb.y>1.1)wb.y=-.1;
+    if(spd>0.00012){wb.vx*=0.00012/spd; wb.vy*=0.00012/spd;}
+    wb.x+=wb.vx; wb.y+=wb.vy;
+    if(wb.x<-.1)wb.x=1.1; if(wb.x>1.1)wb.x=-.1;
+    if(wb.y<-.1)wb.y=1.1; if(wb.y>1.1)wb.y=-.1;
     const str=wb.amp*(.5+.5*Math.sin(t*.4+wb.ph));
     if(str>.12){
       for(let s=0;s<4;s++){
         const angle=wb.wanderPh+s*1.4;
         const spread=60+rnd()*80;
-        drop(wb.x*W+Math.cos(angle)*spread*rnd(),wb.y*H+Math.sin(angle)*spread*rnd(),str,1);
+        drop(wb.x*W+Math.cos(angle)*spread*rnd(), wb.y*H+Math.sin(angle)*spread*rnd(), str, 1, 28);
       }
     }
   }
   if(windT>4.0+rnd()*3.0+1.5){
     windT=0;
     const mx=W*.12;
-    drop(mx+rnd()*2*(W-mx*2)+W*.5,mx+rnd()*2*(H-mx*2)+H*.5,.8+rnd()*.6+1.0,1);
+    drop(mx+rnd()*2*(W-mx*2)+W*.5, mx+rnd()*2*(H-mx*2)+H*.5, .8+rnd()*.6+1.0, 1, 28);
   }
 }
 
@@ -162,8 +208,9 @@ function liveWater(dt,t){
 function addRing(x,y){
   const baseSpd=(.2+Math.random()*.5)*1.1;
   rings.push({x,y,r:2,max:360,a:.28,spd:baseSpd,w:1.8});
-  setTimeout(()=>rings.push({x,y,r:2,max:260,a:.18,spd:baseSpd*.72,w:.55}),550);
-  setTimeout(()=>rings.push({x,y,r:2,max:170,a:.09,spd:baseSpd*.48,w:.32}),1100);
+  drop(x,y,8,3,14);
+  setTimeout(()=>{rings.push({x,y,r:2,max:260,a:.18,spd:baseSpd*.72,w:.55}); drop(x,y,3,2,18);},550);
+  setTimeout(()=>{rings.push({x,y,r:2,max:170,a:.09,spd:baseSpd*.48,w:.32}); drop(x,y,1.5,1,18);},1100);
 }
 
 // ── Комета ────────────────────────────────────────────────────────────────
@@ -175,14 +222,14 @@ function scheduleComet(){
     else{sx=W-10-Math.random()*30;sy=H*Math.random()*0.4;}
     let dx,dy;
     if(Math.random()<0.3){
-      const tx=W*(0.4+Math.random()*0.2),ty=H*(0.4+Math.random()*0.2);
+      const tx=W*(0.4+Math.random()*0.2), ty=H*(0.4+Math.random()*0.2);
       const len=Math.sqrt((tx-sx)**2+(ty-sy)**2);
       const dist=W*(0.55+Math.random()*0.3);
-      dx=(tx-sx)/len*dist;dy=(ty-sy)/len*dist;
+      dx=(tx-sx)/len*dist; dy=(ty-sy)/len*dist;
     }else{
       const a=(195+Math.random()*110)*Math.PI/180;
       const dist=W*(0.45+Math.random()*0.35);
-      dx=Math.cos(a)*dist;dy=Math.sin(a)*dist;
+      dx=Math.cos(a)*dist; dy=Math.sin(a)*dist;
     }
     cometParams={sx,sy,dx,dy};
     cometT=performance.now()/1000;
@@ -190,80 +237,59 @@ function scheduleComet(){
 }
 scheduleComet();
 
-// ── Galaxy offscreen ──────────────────────────────────────────────────────
-function drawGalaxyOff(gAngle){
-  const gx=W*.72,gy=H*.13;
-  octxG.clearRect(0,0,W,H);
-  const gg=octxG.createRadialGradient(gx,gy,0,gx,gy,W*.18);
-  gg.addColorStop(0,'rgba(180,160,255,0.055)');gg.addColorStop(0.3,'rgba(140,120,230,0.03)');
-  gg.addColorStop(0.7,'rgba(80,80,180,0.012)');gg.addColorStop(1,'rgba(0,0,80,0)');
-  octxG.fillStyle=gg;octxG.beginPath();
-  octxG.ellipse(gx,gy,W*.18,W*.07,gAngle+.4,0,Math.PI*2);octxG.fill();
-  const gc=octxG.createRadialGradient(gx,gy,0,gx,gy,W*.025);
-  gc.addColorStop(0,'rgba(255,245,220,0.22)');gc.addColorStop(0.4,'rgba(200,180,255,0.1)');
-  gc.addColorStop(1,'rgba(100,80,200,0)');
-  octxG.fillStyle=gc;octxG.beginPath();
-  octxG.ellipse(gx,gy,W*.025,W*.012,gAngle,0,Math.PI*2);octxG.fill();
+// ── Галактика ─────────────────────────────────────────────────────────────
+let lastGalaxyAngle=-999, galaxyCache=null;
+function drawGalaxy(t){
+  const gAngle=t*.008;
+  if(Math.abs(gAngle-lastGalaxyAngle)<0.05 && galaxyCache){
+    ctx.drawImage(galaxyCache,0,0); return;
+  }
+  lastGalaxyAngle=gAngle;
+  if(!galaxyCache||galaxyCache.width!==W){
+    galaxyCache=document.createElement('canvas');
+    galaxyCache.width=W; galaxyCache.height=H;
+  }
+  const gc2=galaxyCache.getContext('2d');
+  gc2.clearRect(0,0,W,H);
+  const gx=W*.72, gy=H*.13;
+  const gg=gc2.createRadialGradient(gx,gy,0,gx,gy,W*.18);
+  gg.addColorStop(0,'rgba(180,160,255,0.055)'); gg.addColorStop(0.3,'rgba(140,120,230,0.03)');
+  gg.addColorStop(0.7,'rgba(80,80,180,0.012)'); gg.addColorStop(1,'rgba(0,0,80,0)');
+  gc2.fillStyle=gg; gc2.beginPath();
+  gc2.ellipse(gx,gy,W*.18,W*.07,gAngle+.4,0,Math.PI*2); gc2.fill();
+  const gc3=gc2.createRadialGradient(gx,gy,0,gx,gy,W*.025);
+  gc3.addColorStop(0,'rgba(255,245,220,0.22)'); gc3.addColorStop(0.4,'rgba(200,180,255,0.1)');
+  gc3.addColorStop(1,'rgba(100,80,200,0)');
+  gc2.fillStyle=gc3; gc2.beginPath();
+  gc2.ellipse(gx,gy,W*.025,W*.012,gAngle,0,Math.PI*2); gc2.fill();
   for(let arm=0;arm<2;arm++){
     for(let i=0;i<180;i++){
-      const frac=i/180,angle=gAngle+arm*Math.PI+frac*Math.PI*2.4;
-      const r=W*(.008+frac*.13),spread=W*.022*frac;
+      const frac=i/180, angle=gAngle+arm*Math.PI+frac*Math.PI*2.4;
+      const r=W*(.008+frac*.13), spread=W*.022*frac;
       const px=gx+Math.cos(angle)*r*2.2+Math.sin(angle+1)*spread*.3;
       const py=gy+Math.sin(angle)*r*.55+Math.cos(angle+1)*spread*.15;
-      const bright=(.55-frac*.45)*0.7;if(bright<.04)continue;
-      const rv=Math.round(180+frac*40),gv=Math.round(160+frac*50);
-      octxG.fillStyle=`rgba(${rv},${gv},255,${(bright*.18).toFixed(3)})`;
-      octxG.fillRect(px,py,frac<.15?.8:.6,frac<.15?.8:.6);
+      const bright=(.55-frac*.45)*0.7; if(bright<.04)continue;
+      const rv=Math.round(180+frac*40), gv=Math.round(160+frac*50);
+      gc2.fillStyle=`rgba(${rv},${gv},255,${(bright*.18).toFixed(3)})`;
+      gc2.fillRect(px,py,frac<.15?.8:.6,frac<.15?.8:.6);
     }
   }
+  ctx.drawImage(galaxyCache,0,0);
 }
 
-// ── Stars offscreen ───────────────────────────────────────────────────────
-function drawStarsOff(t){
-  octxS.clearRect(0,0,W,H);
-  for(const s of stars){
-    const twinkle=.4+.6*Math.sin(t*s.sp+s.ph);
-    octxS.fillStyle=`rgba(220,235,255,${(s.a*twinkle).toFixed(3)})`;
-    octxS.fillRect(s.x*W,s.y*H,s.r,s.r);
-  }
-}
-
-// ── Wave offscreen (ключевое исправление: drawImage вместо putImageData) ──
-function drawWaveOff(){
-  octxW.clearRect(0,0,W,H);
-  for(let r=1;r<rows-1;r++){
-    const py=r*CELL;if(py>=H)continue;
-    for(let c=1;c<cols-1;c++){
-      const v=buf0[idx(c,r)];if(Math.abs(v)<.07)continue;
-      const px=c*CELL;if(px>=W)continue;
-      const b=Math.min(.08,Math.max(.01,Math.abs(v)*.03));
-      if(v>0){
-        octxW.fillStyle=`rgba(90,185,250,${b})`;
-      }else{
-        octxW.fillStyle=`rgba(0,12,55,${b*.85})`;
-      }
-      octxW.fillRect(px,py,CELL+1,CELL+1);
-    }
-  }
-}
-
-// ── Draw ──────────────────────────────────────────────────────────────────
+// ── Рисование основного canvas ────────────────────────────────────────────
 function draw(t){
-  // 1. фон
+  // фон
   const bg=ctx.createLinearGradient(0,0,0,H);
-  bg.addColorStop(0,'#0d2438');bg.addColorStop(.5,'#091825');bg.addColorStop(1,'#061120');
-  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  bg.addColorStop(0,'#0d2438'); bg.addColorStop(.5,'#091825'); bg.addColorStop(1,'#061120');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
 
-  // 2. галактика
-  const gAngle=t*.008;
-  if(Math.abs(gAngle-lastGalaxyAngle)>0.05||galaxyDirty){
-    drawGalaxyOff(gAngle);lastGalaxyAngle=gAngle;galaxyDirty=false;
-  }
-  ctx.drawImage(offGalaxy,0,0);
+  // галактика
+  drawGalaxy(t);
 
-  // 3. комета
+  // комета
   if(cometT!==null){
-    const ct=t-cometT,DUR=28;
+    const ct=t-cometT, DUR=28;
     if(ct<DUR){
       const p=ct/DUR;
       const alpha=(p<.05?p/.05:1)*(p>.85?1-(p-.85)/.15:1);
@@ -271,7 +297,7 @@ function draw(t){
       const cy2=cometParams.sy+cometParams.dy*p;
       const tailLen=(80+p*160)*alpha;
       const ang=Math.atan2(cometParams.dy,cometParams.dx);
-      const tx=cx2-Math.cos(ang)*tailLen,ty=cy2-Math.sin(ang)*tailLen;
+      const tx=cx2-Math.cos(ang)*tailLen, ty=cy2-Math.sin(ang)*tailLen;
       const tg=ctx.createLinearGradient(tx,ty,cx2,cy2);
       tg.addColorStop(0,'rgba(180,210,255,0)');
       tg.addColorStop(0.5,`rgba(200,225,255,${.08*alpha})`);
@@ -294,28 +320,27 @@ function draw(t){
     }else{cometT=null;scheduleComet();}
   }
 
-  // 4. звёзды
-  drawStarsOff(t);
-  ctx.drawImage(offStars,0,0);
+  // звёзды
+  for(const s of stars){
+    const twinkle=.4+.6*Math.sin(t*s.sp+s.ph);
+    ctx.fillStyle=`rgba(220,235,255,${(s.a*twinkle).toFixed(3)})`;
+    ctx.fillRect(s.x*W,s.y*H,s.r,s.r);
+  }
 
-  // 5. волна (поверх фона, не затирает его)
-  drawWaveOff();
-  ctx.drawImage(offWave,0,0);
-
-  // 6. кольца
+  // кольца
   for(let i=rings.length-1;i>=0;i--){
-    const rg=rings[i];const progress=rg.r/rg.max;
-    const bell=Math.sin(progress*Math.PI);const alpha=rg.a*bell;
+    const rg=rings[i]; const progress=rg.r/rg.max;
+    const bell=Math.sin(progress*Math.PI); const alpha=rg.a*bell;
     if(alpha>0.004){
       const lw=rg.w>1?rg.w*bell:rg.w*(1-progress*.5);
       ctx.beginPath();ctx.arc(rg.x,rg.y,rg.r,0,Math.PI*2);
       ctx.strokeStyle=`rgba(${Math.round(110-progress*80)},${Math.round(205-progress*120)},255,${alpha})`;
-      ctx.lineWidth=lw;ctx.stroke();
+      ctx.lineWidth=lw; ctx.stroke();
     }
-    rg.r+=rg.spd;if(rg.r>rg.max)rings.splice(i,1);
+    rg.r+=rg.spd; if(rg.r>rg.max)rings.splice(i,1);
   }
 
-  // 7. спарклы
+  // спарклы
   ctx.save();ctx.globalCompositeOperation='lighter';
   for(let r=2;r<rows-2;r+=2)for(let c=2;c<cols-2;c+=2){
     const v=buf0[idx(c,r)];
@@ -324,46 +349,66 @@ function draw(t){
   ctx.restore();
 }
 
-// ── Wave sampling для текста ──────────────────────────────────────────────
+// ── Волна на отдельном canvas #cw ─────────────────────────────────────────
+function drawWave(){
+  const data=waveImg.data;
+  data.fill(0);
+  for(let r=1;r<rows-1;r++){
+    const py=r*CELL; if(py>=H)continue;
+    for(let c=1;c<cols-1;c++){
+      const v=buf0[idx(c,r)]; if(Math.abs(v)<.07)continue;
+      const px=c*CELL; if(px>=W)continue;
+      const b=Math.min(.14,Math.max(.02,Math.abs(v)*.05));
+      const a=Math.round(b*255);
+      for(let dy=0;dy<CELL+1&&py+dy<H;dy++){
+        let off=((py+dy)*W+px)*4;
+        for(let dx=0;dx<CELL+1&&px+dx<W;dx++,off+=4){
+          if(v>0){data[off]=90;data[off+1]=185;data[off+2]=250;data[off+3]=a;}
+          else   {data[off]=0; data[off+1]=12; data[off+2]=55; data[off+3]=Math.round(a*.85);}
+        }
+      }
+    }
+  }
+  ctxW.putImageData(waveImg,0,0);
+}
+
+// ── Текст ─────────────────────────────────────────────────────────────────
+const waveLines=Array.from(document.querySelectorAll('.wl')).map((el,i)=>({
+  el, phase:i*0.55, freq:0.32+i*0.03, amp:0.35+Math.random()*0.25, cx:0, cy:0
+}));
+function invalidateRectCache(){
+  for(const e of waveLines){
+    const rect=e.el.getBoundingClientRect();
+    e.cx=rect.left+rect.width/2; e.cy=rect.top+rect.height/2;
+  }
+}
+let rectFrame=0;
 function waveAt(x,y){
   const c=Math.round(x/CELL),r=Math.round(y/CELL);
   if(c<2||c>cols-3||r<2||r>rows-3)return null;
   return{v:buf0[idx(c,r)],vx:buf0[idx(c+1,r)]-buf0[idx(c-1,r)],vy:buf0[idx(c,r+1)]-buf0[idx(c,r-1)]};
 }
-
-// ── Текстовая анимация ────────────────────────────────────────────────────
-const waveLines=Array.from(document.querySelectorAll('.wl')).map((el,i)=>({
-  el,phase:i*0.55,freq:0.32+i*0.03,amp:0.35+Math.random()*0.25,cx:0,cy:0
-}));
-
-function invalidateRectCache(){
-  for(const e of waveLines){
-    const rect=e.el.getBoundingClientRect();
-    e.cx=rect.left+rect.width/2;e.cy=rect.top+rect.height/2;
-  }
-}
-let rectFrame=0;
 function animText(t){
   if(++rectFrame>90){rectFrame=0;invalidateRectCache();}
   for(const e of waveLines){
     const dy0=e.amp*Math.sin(t*e.freq+e.phase);
     const dx0=e.amp*.22*Math.sin(t*e.freq*.7+e.phase+1.3);
     const w=waveAt(e.cx,e.cy);
-    const wdx=w?w.vx*3:0,wdy=w?w.vy*3:0,wsk=w?w.vx*.18:0;
+    const wdx=w?w.vx*6:0, wdy=w?w.vy*6:0, wsk=w?w.vx*.35:0;
     e.el.style.transform=`translate(${(dx0+wdx).toFixed(2)}px,${(dy0+wdy).toFixed(2)}px) skewX(${wsk.toFixed(2)}deg)`;
   }
 }
 
 // ── Events ────────────────────────────────────────────────────────────────
-document.addEventListener('mousemove',e=>drop(e.clientX,e.clientY,.45,1));
-document.addEventListener('click',e=>{drop(e.clientX,e.clientY,8,3);addRing(e.clientX,e.clientY);});
+document.addEventListener('mousemove',e=>drop(e.clientX,e.clientY,.15,1,12));
+document.addEventListener('click',e=>{addRing(e.clientX,e.clientY);});
 document.addEventListener('touchstart',e=>{
   if(e.target.closest('nav,a,.btn'))return;
-  for(const t of e.touches){drop(t.clientX,t.clientY,8,3);addRing(t.clientX,t.clientY);}
+  for(const t of e.touches){addRing(t.clientX,t.clientY);}
 },{passive:true});
 document.addEventListener('touchmove',e=>{
   if(e.target.closest('nav,a,.btn'))return;
-  for(const t of e.touches)drop(t.clientX,t.clientY,1.2,2);
+  for(const t of e.touches)drop(t.clientX,t.clientY,.3,1,12);
   e.preventDefault();
 },{passive:false});
 
@@ -374,7 +419,7 @@ document.addEventListener('touchmove',e=>{
     if(cooldown||cometT!==null)return;
     cooldown=true;setTimeout(()=>cooldown=false,5000);
     const rect=lbl.getBoundingClientRect();
-    const sx=rect.left+Math.random()*rect.width,sy=rect.top+Math.random()*rect.height;
+    const sx=rect.left+Math.random()*rect.width, sy=rect.top+Math.random()*rect.height;
     const a=(180+Math.random()*180)*Math.PI/180;
     const dist=W*(0.4+Math.random()*0.45);
     cometParams={sx,sy,dx:Math.cos(a)*dist,dy:Math.sin(a)*dist};
@@ -391,24 +436,141 @@ document.addEventListener('touchmove',e=>{
   lbl.addEventListener('touchmove',e=>onMove(e.touches[0].clientX,e.touches[0].clientY),{passive:true});
 })();
 
-window.addEventListener('resize',()=>{init();invalidateRectCache();});
+window.addEventListener('resize',()=>{
+  galaxyCache=null;
+  waveImg=null;
+  init();
+});
 init();
 invalidateRectCache();
-setTimeout(()=>drop(W*.5,H*.45,4,2),300);
-setTimeout(()=>drop(W*.3,H*.6,2.5,1),900);
-setTimeout(()=>drop(W*.7,H*.35,2.5,1),1600);
-setTimeout(()=>drop(W*.45,H*.25,2,1),2300);
-setTimeout(()=>drop(W*.65,H*.7,2,1),3000);
+setTimeout(()=>dropImmediate(W*.5,H*.45,4,2),300);
+setTimeout(()=>dropImmediate(W*.3,H*.6,2.5,1),900);
+setTimeout(()=>dropImmediate(W*.7,H*.35,2.5,1),1600);
+setTimeout(()=>dropImmediate(W*.45,H*.25,2,1),2300);
+setTimeout(()=>dropImmediate(W*.65,H*.7,2,1),3000);
 
 let prev=performance.now();
 (function loop(now){
-  const dt=(now-prev)/1000;prev=now;const t=now/1000;
+  const dt=(now-prev)/1000; prev=now; const t=now/1000;
   liveWater(dt,t);
+  flushDrops();
   if(Math.random()<.25)step();
   draw(t);
+  drawWave();
+  if(window._tunnelDraw)window._tunnelDraw(now);
   animText(t);
   requestAnimationFrame(loop);
 })(performance.now());
+
+// ── Tunnel → iframe ───────────────────────────────────────────────────────
+(function(){
+  var tc=document.getElementById('tunnel-canvas');
+  var tctx=tc.getContext('2d');
+  tc.width=window.innerWidth; tc.height=window.innerHeight;
+
+  var active=false, startTime=0, DUR=2000;
+
+  function go(e){
+    e.preventDefault();
+    if(active)return;
+    active=true;
+    startTime=performance.now();
+    tc.style.display='block';
+  }
+  window.tunnelGo=go;
+
+  document.getElementById('btn').addEventListener('click', go);
+  document.getElementById('btn').addEventListener('touchend', go, {passive:false});
+  var np=document.getElementById('navPetlya');
+  if(np) np.addEventListener('click', go);
+
+  function tunnelDraw(now){
+    if(!active)return;
+    var p=Math.min((now-startTime)/DUR,1);
+    var ease=1-Math.pow(1-p,2.5);
+    var W=tc.width, H=tc.height;
+    var cx=W/2, cy=H/2;
+    var maxLen=Math.sqrt(cx*cx+cy*cy)*1.5;
+
+    tctx.clearRect(0,0,W,H);
+
+    // каждая линия — отрезок со своей скоростью схождения
+    tctx.save();
+    for(var i=0;i<48;i++){
+      var angle=(i/48)*Math.PI*2;
+      // у каждой линии свой offset скорости (от -0.15 до +0.15)
+      var phaseOffset=(Math.sin(i*2.3)*0.15+Math.cos(i*1.7)*0.1);
+      var lineEase=Math.min(1,Math.max(0, ease+phaseOffset));
+      // длина отрезка — фиксированная часть от maxLen
+      var segLen=maxLen*(0.15+Math.sin(i*1.1)*0.08);
+      // конец линии движется к центру
+      var endLen=maxLen*(1-lineEase);
+      // начало отрезка = конец + длина отрезка
+      var startLen=Math.min(maxLen, endLen+segLen);
+      var alpha=Math.min(0.9, ease*2)*(1-Math.max(0,lineEase-0.85)/0.15);
+      if(alpha<0.01)continue;
+      tctx.beginPath();
+      tctx.moveTo(cx+Math.cos(angle)*startLen, cy+Math.sin(angle)*startLen);
+      tctx.lineTo(cx+Math.cos(angle)*Math.max(0,endLen), cy+Math.sin(angle)*Math.max(0,endLen));
+      tctx.strokeStyle='rgba(90,185,250,'+alpha+')';
+      tctx.lineWidth=Math.max(0.3,(1-ease)*2+0.3);
+      tctx.stroke();
+    }
+    tctx.restore();
+
+    // центральная точка
+    if(ease>0.6){
+      var coreAlpha=(ease-0.6)/0.4;
+      var r=Math.max(1,30*(1-ease));
+      var g=tctx.createRadialGradient(cx,cy,0,cx,cy,r);
+      g.addColorStop(0,'rgba(255,255,255,'+coreAlpha+')');
+      g.addColorStop(1,'rgba(90,185,250,0)');
+      tctx.fillStyle=g;
+      tctx.beginPath(); tctx.arc(cx,cy,r,0,Math.PI*2); tctx.fill();
+    }
+
+    // вспышка → чёрный → переход (только когда линии сошлись)
+    if(ease>0.96){
+      var fa=(ease-0.96)/0.04;
+      if(fa<=0.5){
+        tctx.fillStyle='rgba(255,255,255,'+(fa/0.5)+')';
+        tctx.fillRect(0,0,W,H);
+      } else {
+        var dark=(fa-0.5)/0.5;
+        tctx.fillStyle='rgba(0,0,0,'+dark+')';
+        tctx.fillRect(0,0,W,H);
+      }
+    }
+
+    // UI уходит
+    var ui=Math.max(0,1-ease*2.5).toFixed(2);
+    document.querySelector('.ui').style.opacity=ui;
+    document.querySelector('.version').style.opacity=ui;
+    document.querySelector('nav').style.opacity=ui;
+
+    if(p>=1) window.location.href='petlya.html';
+  }
+
+    // вписываем в loop через глобал
+  window._tunnelDraw=tunnelDraw;
+})();
+
+// ── Disclaimer zoom on touch ──────────────────────────────────────────────
+(function(){
+  var d=document.getElementById('disc');
+  d.addEventListener('touchstart',function(){
+    d.style.transform='scale(1.2)';
+    d.style.color='rgba(255,255,255,0.22)';
+  },{passive:true});
+  d.addEventListener('touchend',function(){
+    d.style.transform='';
+    d.style.color='';
+  },{passive:true});
+  d.addEventListener('touchcancel',function(){
+    d.style.transform='';
+    d.style.color='';
+  },{passive:true});
+})();
 </script>
 </body>
 </html>

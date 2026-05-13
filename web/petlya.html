@@ -7,15 +7,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Unbounded:wght@200;400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="shared.css">
   <style>
-    body { height: 100vh; display: flex; flex-direction: column; overflow: hidden; animation: fadeIn 3s ease forwards; }
-    @keyframes fadeIn {
-      0%   { opacity: 0; filter: brightness(3) saturate(0); }
-      20%  { opacity: 0.4; filter: brightness(4) saturate(0); }
-      40%  { opacity: 0.6; filter: brightness(2) saturate(0.2); }
-      70%  { opacity: 0.85; filter: brightness(1.3) saturate(0.6); }
-      100% { opacity: 1; filter: none; }
+    body { height: 100vh; display: flex; flex-direction: column; overflow: hidden; animation: pageIn 2.5s ease forwards; }
+    @keyframes pageIn {
+      0%   { opacity: 0; }
+      20%  { opacity: 1; filter: brightness(4) saturate(0); }
+      60%  { filter: brightness(1.5) saturate(0.3); }
+      100% { opacity: 1; filter: brightness(1) saturate(1); }
     }
-    .sys-msg { transform-origin: left center; }
 
     header { flex-shrink: 0; position: relative; }
 
@@ -365,98 +363,6 @@ function weaveIntoNet(btn) {
     localStorage.setItem('unitycode_nodes', JSON.stringify(nodes));
   } catch {}
 }
-
-// ── Sys-msg плавный зум через JS ──────────────────────────────────────────
-(function(){
-  var el = document.querySelector('.sys-msg');
-  if(!el) return;
-  var DUR = 3200;
-  var start = null;
-
-  function curve(p) {
-    if(p < 0.35) return (p / 0.35) * 1.2;
-    var t = (p - 0.35) / 0.65;
-    return 1.2 - 0.2 * (1 - Math.pow(1 - t, 3));
-  }
-
-  // разбиваем sys-text на строки через <br>
-  var sysText = el.querySelector('.sys-text');
-  var sysTag  = el.querySelector('.sys-tag');
-
-  // оборачиваем каждую строку в span
-  var lines = [];
-  if(sysText) {
-    var html = sysText.innerHTML;
-    var parts = html.split(/<br\s*\/?>/i);
-    sysText.innerHTML = parts.map(function(p) {
-      return '<span class="sys-line" style="display:block">' + p + '</span>';
-    }).join('');
-    lines = Array.from(sysText.querySelectorAll('.sys-line'));
-  }
-
-  // sys-tag не увеличивается — сразу нормальный
-  if(sysTag) {
-    sysTag.style.transformOrigin = 'left center';
-  }
-
-  el.style.opacity = '0';
-  el.style.transformOrigin = 'left center';
-
-  // каждая строка начинает возврат последовательно
-  // строка i начинает возврат при p = returnStart + i * step
-  var returnStart = 0.38;
-  var step = 0.18;
-
-  setTimeout(function(){
-    function frame(ts) {
-      if(!start) start = ts;
-      var p = Math.min((ts - start) / DUR, 1);
-      var op = Math.min(1, p / 0.08);
-      el.style.opacity = op.toFixed(3);
-
-      // общий блок — растёт и начинает возврат
-      var globalS = curve(p);
-      el.style.transform = 'scale(' + globalS.toFixed(4) + ')';
-
-      // sys-tag — контрмасштаб чтобы оставаться нормального размера
-      if(sysTag) {
-        var inv = 1 / globalS;
-        sysTag.style.transform = 'scale(' + inv.toFixed(4) + ')';
-      }
-
-      // строки — последовательный возврат
-      lines.forEach(function(line, i) {
-        var lineStart = returnStart + i * step;
-        if(p < 0.35) {
-          // фаза роста — строки вместе с блоком
-          line.style.transform = 'none';
-        } else if(p < lineStart) {
-          // ждёт — слегка увеличена
-          line.style.transform = 'scale(1.06)';
-          line.style.transformOrigin = 'left center';
-        } else {
-          // возвращается логарифмически + яркость затухает
-          var t = Math.min((p - lineStart) / (1 - lineStart), 1);
-          var s = 1 + 0.06 * (1 - Math.pow(t, 0.35));
-          var bright = 1 + 0.8 * Math.pow(1 - t, 3);
-          line.style.transform = 'scale(' + s.toFixed(4) + ')';
-          line.style.filter = 'brightness(' + bright.toFixed(2) + ')';
-          line.style.transformOrigin = 'left center';
-        }
-      });
-
-      if(p < 1) {
-        requestAnimationFrame(frame);
-      } else {
-        el.style.transform = 'none';
-        el.style.opacity = '1';
-        if(sysTag) sysTag.style.transform = 'none';
-        lines.forEach(function(l) { l.style.transform = 'none'; l.style.filter = 'none'; });
-      }
-    }
-    requestAnimationFrame(frame);
-  }, 500);
-})();
 </script>
 </body>
 </html>
