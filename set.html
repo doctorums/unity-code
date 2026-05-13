@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UNITYCODE — Сеть</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Unbounded:wght@200;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <style>
+    body { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    body::before { display: none; } /* карта — свой фон */
+
+    header { flex-shrink: 0; position: relative; z-index: 1000; background: rgba(0,0,0,0.98); }
+
+    /* Статус бар */
+    .status-bar {
+      display: flex; gap: 2rem;
+      padding: 0.6rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,0.95);
+      flex-shrink: 0; z-index: 999;
+    }
+    .stat        { display: flex; align-items: center; gap: 0.5rem; }
+    .stat-label  { font-size: 0.55rem; color: var(--dim); letter-spacing: 0.15em; text-transform: uppercase; }
+    .stat-val    { font-size: 0.7rem; color: var(--accent); }
+
+    /* Карта */
+    #map { flex: 1; position: relative; z-index: 1; }
+
+    .leaflet-container { background: #050a05 !important; font-family: 'Share Tech Mono', monospace; }
+    .leaflet-tile-pane { filter: brightness(0.3) saturate(0) hue-rotate(120deg); }
+
+    /* Маркер */
+    .node-marker {
+      width: 10px; height: 10px;
+      background: var(--accent); border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent), 0 0 20px rgba(0,255,136,0.3);
+      animation: node-pulse 2s ease-in-out infinite; cursor: pointer;
+    }
+    @keyframes node-pulse {
+      0%,100% { box-shadow: 0 0 10px var(--accent); }
+      50%     { box-shadow: 0 0 20px var(--accent), 0 0 40px rgba(0,255,136,0.2); }
+    }
+
+    /* Попап */
+    .leaflet-popup-content-wrapper {
+      background: rgba(0,0,0,0.95) !important;
+      border: 1px solid rgba(0,255,136,0.3) !important;
+      border-radius: 0 !important; color: var(--white) !important;
+      padding: 0 !important;
+      box-shadow: 0 0 20px rgba(0,255,136,0.1) !important;
+    }
+    .leaflet-popup-tip { background: rgba(0,0,0,0.95) !important; }
+
+    .popup-content { padding: 1.2rem; min-width: 240px; }
+    .popup-tag     { font-size: 0.55rem; color: var(--accent); letter-spacing: 0.2em; margin-bottom: 0.6rem; }
+    .popup-text    { font-size: 0.75rem; line-height: 1.6; color: rgba(255,255,255,0.7); margin-bottom: 0.8rem; }
+    .popup-time    { font-size: 0.55rem; color: var(--dim); }
+    .popup-btn {
+      display: inline-block; margin-top: 0.8rem;
+      padding: 0.4rem 0.8rem;
+      border: 1px solid rgba(0,255,136,0.3);
+      color: var(--accent); font-size: 0.6rem; letter-spacing: 0.1em;
+      cursor: pointer; background: transparent; text-transform: uppercase;
+      transition: background 0.2s, color 0.2s; text-decoration: none;
+    }
+    .popup-btn:hover { background: var(--accent); color: var(--black); }
+
+    /* Панель добавления */
+    .add-panel {
+      position: absolute; bottom: 2rem; right: 2rem; z-index: 500;
+      background: rgba(0,0,0,0.95);
+      border: 1px solid var(--border);
+      padding: 1.2rem; max-width: 280px;
+    }
+    .add-title { font-family: 'Unbounded', sans-serif; font-size: 0.65rem; letter-spacing: 0.1em; margin-bottom: 0.8rem; color: var(--accent); }
+    .add-input {
+      width: 100%;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border); color: var(--white);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.7rem; padding: 0.5rem 0.7rem;
+      outline: none; resize: none; height: 70px; margin-bottom: 0.8rem;
+    }
+    .add-input:focus { border-color: rgba(0,255,136,0.4); }
+    .add-btn {
+      width: 100%; padding: 0.6rem;
+      border: 1px solid var(--accent); color: var(--accent);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem; letter-spacing: 0.15em;
+      cursor: pointer; background: transparent; text-transform: uppercase;
+      transition: background 0.2s, color 0.2s;
+    }
+    .add-btn:hover { background: var(--accent); color: var(--black); }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="logo">UNITYCODE // СЕТЬ</a>
+  <nav>
+    <a href="index.html">Имплант</a>
+    <a href="virus.html">Диагностика</a>
+    <a href="petlya.html">Петля</a>
+    <a href="set.html">Сеть</a>
+    <a href="kod.html">Код</a>
+  </nav>
+</header>
+
+<div class="status-bar">
+  <div class="stat"><span class="stat-label">Узлов в сети:</span><span class="stat-val" id="nodeCount">0</span></div>
+  <div class="stat"><span class="stat-label">Активны сейчас:</span><span class="stat-val" id="activeCount">1</span></div>
+  <div class="stat"><span class="stat-label">Пульс сети:</span><span class="stat-val" id="pulse">●</span></div>
+</div>
+
+<div id="map"></div>
+
+<div class="add-panel">
+  <div class="add-title">// ДОБАВИТЬ УЗЕЛ</div>
+  <textarea class="add-input" id="nodeText" placeholder="Короткий сигнал (анонимно)..."></textarea>
+  <button class="add-btn" onclick="addNode()">[ Разместить в сети ]</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="nav.js"></script>
+<script>
+const map = L.map('map', { center: [20, 20], zoom: 2, zoomControl: false, attributionControl: false });
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+
+const DEMO_NODES = [
+  { lat: 55.75, lng:   37.61, text: 'Перестал бояться тишины. Понял, что это не пустота.',        time: '2 часа назад',  city: 'Москва' },
+  { lat: 48.85, lng:    2.35, text: 'Простил отца. Почувствовал, как что-то внутри соединилось.', time: '4 часа назад',  city: 'Париж' },
+  { lat: 40.71, lng:  -74.00, text: 'Написал первое стихотворение за 10 лет. Связь с собой.',      time: '6 часов назад', city: 'Нью-Йорк' },
+  { lat: 51.50, lng:   -0.12, text: 'Помог незнакомцу на улице. Узнал его имя. Это важно.',        time: '8 часов назад', city: 'Лондон' },
+  { lat: 35.68, lng:  139.69, text: '静寂の中に答えがあった。つながりを感じた。',                    time: '10 часов назад',city: 'Токио' },
+  { lat:-23.55, lng:  -46.63, text: 'Parei de lutar contra o caos. Ele tem um padrão.',            time: '12 часов назад',city: 'Сан-Паулу' },
+  { lat: 59.93, lng:   30.32, text: 'Понял, что мои разрывы — это начало связей.',                 time: '1 день назад',  city: 'Санкт-Петербург' },
+  { lat: 25.20, lng:   55.27, text: 'Found the signal in the noise. Everything is connected.',    time: '1 день назад',  city: 'Дубай' },
+];
+
+const nodeIcon = () => L.divIcon({
+  className: '', html: '<div class="node-marker"></div>',
+  iconSize: [10, 10], iconAnchor: [5, 5]
+});
+
+let totalNodes = 0;
+
+function renderNodes(nodes) {
+  nodes.forEach(node => {
+    const lat  = node.lat  ?? (20 + (Math.random() - 0.5) * 80);
+    const lng  = node.lng  ?? (20 + (Math.random() - 0.5) * 120);
+    const text = node.text ?? '...';
+    const time = node.time ?? 'только что';
+    const city = node.city ?? 'Unknown';
+
+    L.marker([lat, lng], { icon: nodeIcon() })
+      .addTo(map)
+      .bindPopup(`
+        <div class="popup-content">
+          <div class="popup-tag">// УЗЕЛ — ${city}</div>
+          <div class="popup-text">${text}</div>
+          <div class="popup-time">${time}</div>
+          <a href="petlya.html" class="popup-btn">Получить сигнал →</a>
+        </div>`, { className: '' });
+  });
+  totalNodes += nodes.length;
+  document.getElementById('nodeCount').textContent = totalNodes;
+}
+
+// Загрузить сохранённые узлы из localStorage
+let savedNodes = [];
+try { savedNodes = JSON.parse(localStorage.getItem('unitycode_nodes') || '[]'); } catch {}
+
+renderNodes(DEMO_NODES);
+if (savedNodes.length) renderNodes(savedNodes);
+
+function addNode() {
+  const text = document.getElementById('nodeText').value.trim();
+  if (!text) return;
+  const center = map.getCenter();
+  const node = {
+    lat:  center.lat + (Math.random() - 0.5) * 10,
+    lng:  center.lng + (Math.random() - 0.5) * 10,
+    text: text.slice(0, 120),
+    time: 'только что',
+    city: 'Ваш город'
+  };
+  renderNodes([node]);
+  document.getElementById('nodeText').value = '';
+  try {
+    const local = JSON.parse(localStorage.getItem('unitycode_nodes') || '[]');
+    local.push(node);
+    localStorage.setItem('unitycode_nodes', JSON.stringify(local));
+  } catch {}
+}
+
+// Пульс
+let pulseState = true;
+setInterval(() => {
+  document.getElementById('pulse').style.color = (pulseState = !pulseState) ? 'var(--accent)' : 'var(--dim)';
+}, 1500);
+
+// Счётчик активных
+setInterval(() => {
+  document.getElementById('activeCount').textContent = Math.floor(1 + Math.random() * 8);
+}, 5000);
+</script>
+</body>
+</html>
