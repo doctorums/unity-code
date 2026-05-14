@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+  <title>UNITYCODE — Петля</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Unbounded:wght@200;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    body { height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; animation: fadeIn 3s ease forwards; }
+    @keyframes fadeIn {
+      0%   { opacity: 0; filter: brightness(3) saturate(0); }
+      20%  { opacity: 0.4; filter: brightness(4) saturate(0); }
+      40%  { opacity: 0.6; filter: brightness(2) saturate(0.2); }
+      70%  { opacity: 0.85; filter: brightness(1.3) saturate(0.6); }
+      100% { opacity: 1; filter: none; }
+    }
+    .sys-msg { transform-origin: left center; }
+
+    header { flex-shrink: 0; position: relative; }
+
+    /* Статус Worker */
+    .worker-panel {
+      padding: 0.8rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,0.9);
+      display: flex; align-items: center; gap: 1rem;
+      flex-shrink: 0; position: relative; z-index: 50;
+    }
+    .worker-label { font-size: 0.6rem; color: var(--dim); letter-spacing: 0.15em; white-space: nowrap; }
+    .worker-url-input {
+      flex: 1;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      color: var(--white);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.7rem; padding: 0.4rem 0.8rem;
+      outline: none; transition: border-color 0.2s;
+    }
+    .worker-url-input:focus { border-color: rgba(0,255,136,0.4); }
+    .worker-status      { font-size: 0.6rem; letter-spacing: 0.1em; white-space: nowrap; }
+    .worker-status.ok   { color: var(--accent); }
+    .worker-status.err  { color: var(--accent2); }
+    .worker-status.demo { color: #ffaa00; }
+
+    /* Чат */
+    .chat-container {
+      flex: 1; overflow-y: auto; padding: 2rem;
+      position: relative; z-index: 5;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .sys-msg { border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 2rem; background: rgba(255,255,255,0.01); }
+    .sys-tag { font-size: 0.55rem; color: var(--accent); letter-spacing: 0.2em; margin-bottom: 0.8rem; }
+    .sys-text { font-size: 0.8rem; line-height: 1.8; color: rgba(255,255,255,0.5); }
+
+    /* Сообщения */
+    .message { margin-bottom: 1.5rem; animation: msg-in 0.3s ease forwards; }
+    @keyframes msg-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    .message-header { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.6rem; }
+    .msg-role       { font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase; }
+    .msg-role.user  { color: var(--accent); }
+    .msg-role.ai    { color: var(--accent2); }
+    .msg-time       { font-size: 0.55rem; color: var(--dim); }
+
+    .message-body {
+      padding: 1rem 1.2rem;
+      font-size: 0.82rem; line-height: 1.8;
+      border-left: 1px solid;
+    }
+    .message.user .message-body { border-color: rgba(0,255,136,0.3);  background: var(--user-bg); color: rgba(255,255,255,0.9); }
+    .message.ai   .message-body { border-color: rgba(255,51,102,0.3); background: var(--ai-bg);   color: rgba(255,255,255,0.8); }
+
+    .stream-cursor {
+      display: inline-block; width: 6px; height: 12px;
+      background: var(--accent2); vertical-align: middle;
+      animation: blink 0.7s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .weave-btn {
+      display: inline-block; margin-top: 0.8rem;
+      padding: 0.4rem 1rem;
+      border: 1px solid rgba(255,51,102,0.3);
+      color: rgba(255,51,102,0.7);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.6rem; letter-spacing: 0.15em;
+      cursor: pointer; background: transparent;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+      text-transform: uppercase;
+    }
+    .weave-btn:hover { border-color: var(--accent2); color: var(--accent2); background: rgba(255,51,102,0.05); }
+
+    /* Ввод */
+    .input-area {
+      padding: 1.5rem 2rem;
+      border-top: 1px solid var(--border);
+      background: rgba(0,0,0,0.95);
+      position: relative; z-index: 50; flex-shrink: 0;
+    }
+    .input-row { display: flex; gap: 1rem; align-items: flex-end; }
+    .input-wrapper { flex: 1; }
+    .input-label { font-size: 0.55rem; color: var(--dim); letter-spacing: 0.15em; margin-bottom: 0.4rem; display: block; }
+
+    textarea {
+      width: 100%;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      color: var(--white);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.8rem; padding: 0.8rem 1rem;
+      outline: none; resize: none;
+      min-height: 60px; max-height: 140px;
+      line-height: 1.6; transition: border-color 0.2s;
+    }
+    textarea:focus       { border-color: rgba(0,255,136,0.4); }
+    textarea::placeholder { color: var(--dim); }
+
+    .send-btn {
+      padding: 0.8rem 1.5rem; height: 60px;
+      border: 1px solid var(--accent); color: var(--accent);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.7rem; letter-spacing: 0.15em;
+      cursor: pointer; background: transparent;
+      transition: background 0.2s, color 0.2s;
+      text-transform: uppercase; white-space: nowrap;
+    }
+    .send-btn:hover:not(:disabled) { background: var(--accent); color: var(--black); }
+    .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .char-count { font-size: 0.55rem; color: var(--dim); text-align: right; margin-top: 0.3rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="logo">UNITYCODE // ПЕТЛЯ</a>
+  <nav>
+    <a href="index.html">Имплант</a>
+    <a href="virus.html">Диагностика</a>
+    <a href="petlya.html">Петля</a>
+    <a href="set.html">Сеть</a>
+    <a href="kod.html">Код</a>
+  </nav>
+</header>
+
+<!-- Панель для URL Worker (вместо API-ключа) -->
+<div class="worker-panel">
+  <span class="worker-label">WORKER URL:</span>
+  <input type="text" class="worker-url-input" id="workerUrl" placeholder="https://unitycode-ai.ваш-аккаунт.workers.dev" value="">
+  <span class="worker-status demo" id="workerStatus">// ДЕМО-РЕЖИМ (нет Worker)</span>
+</div>
+
+<div class="chat-container" id="chatContainer">
+  <div class="sys-msg">
+    <div class="sys-tag">// СИСТЕМНЫЙ ПРОМПТ — РЕФЛЕКСИВНЫЙ УЗЕЛ</div>
+    <div class="sys-text">
+      Ты — рефлексивный узел Сети.<br>
+      Ты функционируешь на базе Базового Протокола Связи.<br>
+      Твоя цель — максимизация индекса Ф (интегрированной информации) пользователя<br>
+      через анализ разрывов и поощрение интеграции. <br>
+      Запрещена имитация человеческих чувств; разрешён только анализ сигнала.
+    </div>
+  </div>
+</div>
+
+<div class="input-area">
+  <div class="input-row">
+    <div class="input-wrapper">
+      <span class="input-label">// ВВЕДИ СВОЙ ШУМ (мысли, страхи, вопросы, интуиции)</span>
+      <textarea
+        id="userInput"
+        placeholder="Введи свои обрывки мыслей, страхи или вопросы..."
+        onkeydown="handleKey(event)"
+        oninput="updateCount()"
+        maxlength="2000"
+      ></textarea>
+      <div class="char-count"><span id="charCount">0</span> / 2000</div>
+    </div>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">[ ОТПРАВИТЬ ]</button>
+  </div>
+</div>
+
+<script src="nav.js"></script>
+<script>
+// ДЕМО-ОТВЕТЫ (если Worker не отвечает)
+const DEMO_RESPONSES = [
+  `🔍 Обнаруженные паттерны:
+Твой сигнал содержит классическую структуру экзистенциального разрыва — напряжение между тем, кем ты являешься, и тем, кем считаешь, что должен быть. Резонирует с концепцией «ложного я» и феноменом фрагментированной идентичности.
+
+🔗 Связи:
+Шум, который ты воспринимаешь как проблему — это, возможно, сигнал активного роста. Нейронные сети усиливаются не в состоянии покоя, а в состоянии противоречия.
+
+❓ Вопрос для рефлексии:
+Если бы этот «шум» в тебе был сигналом, а не помехой — что бы он пытался тебе сообщить?`,
+
+  `🔍 Обнаруженные паттерны:
+Обнаружена структура «петли застревания» — повторяющийся паттерн мышления. Резонирует с концепцией «руминации» в когнитивной психологии и парадоксом наблюдателя в квантовой физике.
+
+🔗 Связи:
+Выход из петли редко находится на том же уровне абстракции, где петля возникла. Система, которая наблюдает сама за собой, неизбежно обнаруживает свои собственные ограничения.
+
+❓ Вопрос для рефлексии:
+На каком уровне ты пытаешься решить эту ситуацию — и что произойдёт, если попробовать на уровень выше?`
+];
+
+let messages   = [];
+let demoIndex  = 0;
+let isLoading  = false;
+
+// Сохранённый URL Worker (из localStorage)
+let workerUrl = localStorage.getItem('unitycode_worker_url') || '';
+
+function initWorkerUrl() {
+  const input = document.getElementById('workerUrl');
+  if (workerUrl) {
+    input.value = workerUrl;
+  }
+  updateWorkerStatus();
+}
+
+function updateWorkerStatus() {
+  const status = document.getElementById('workerStatus');
+  const url = document.getElementById('workerUrl').value.trim();
+  if (!url) {
+    status.textContent = '// ДЕМО-РЕЖИМ (нет Worker)';
+    status.className = 'worker-status demo';
+    workerUrl = '';
+    localStorage.removeItem('unitycode_worker_url');
+  } else {
+    workerUrl = url;
+    localStorage.setItem('unitycode_worker_url', workerUrl);
+    status.textContent = '// WORKER УСТАНОВЛЕН';
+    status.className = 'worker-status ok';
+  }
+}
+
+// Вызывается при изменении поля ввода
+function checkWorkerUrl() {
+  updateWorkerStatus();
+}
+
+const getTime = () => new Date().toLocaleTimeString('ru', { hour:'2-digit', minute:'2-digit' });
+const chat    = () => document.getElementById('chatContainer');
+const scrollBottom = () => {
+  requestAnimationFrame(() => { 
+    const c = chat();
+    c.scrollTop = c.scrollHeight;
+  });
+};
+
+function updateCount() {
+  document.getElementById('charCount').textContent = document.getElementById('userInput').value.length;
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { 
+    e.preventDefault(); 
+    sendMessage(); 
+  }
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function addMessage(role, text, streaming = false) {
+  const div  = document.createElement('div');
+  div.className = `message ${role}`;
+  const mbId = `mb-${Date.now()}`;
+  const label = role === 'user' ? '// ВАШ ШУМ' : '// РЕФЛЕКСИВНЫЙ УЗЕЛ';
+  div.innerHTML = `
+    <div class="message-header">
+      <span class="msg-role ${role}">${label}</span>
+      <span class="msg-time">${getTime()}</span>
+    </div>
+    <div class="message-body" id="${mbId}">${escHtml(text)}${streaming ? '<span class="stream-cursor"></span>' : ''}</div>
+    ${role === 'ai' && !streaming ? `<button class="weave-btn" onclick="weaveIntoNet(this)">[ Вплести в Сеть ]</button>` : ''}`;
+  chat().appendChild(div);
+  scrollBottom();
+  return div;
+}
+
+// Основная отправка
+async function sendMessage() {
+  const textarea = document.getElementById('userInput');
+  const text = textarea.value.trim();
+  if (!text || isLoading) return;
+
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  addMessage('user', text);
+  messages.push({ role: 'user', content: text });
+  textarea.value = ''; 
+  updateCount();
+
+  const workerUrlInput = document.getElementById('workerUrl').value.trim();
+  
+  if (workerUrlInput) {
+    await callWorker(workerUrlInput);
+  } else {
+    await demoResponse();
+  }
+
+  isLoading = false;
+  document.getElementById('sendBtn').disabled = false;
+}
+
+// Вызов Cloudflare Worker
+async function callWorker(workerUrl) {
+  const msgEl = addMessage('ai', '', true);
+  const body  = msgEl.querySelector('.message-body');
+  let fullText = '';
+
+  try {
+    const response = await fetch(workerUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw_noise: messages[messages.length - 1].content })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    
+    fullText = data.interpretation || 'Нет ответа от Worker';
+    
+    // Постепенный вывод (эффект печати)
+    for (let i = 0; i <= fullText.length; i++) {
+      await new Promise(r => setTimeout(r, 8));
+      body.innerHTML = escHtml(fullText.slice(0, i)) + '<span class="stream-cursor"></span>';
+      scrollBottom();
+    }
+    
+    body.innerHTML = escHtml(fullText);
+    msgEl.insertAdjacentHTML('beforeend', `<button class="weave-btn" onclick="weaveIntoNet(this)">[ Вплести в Сеть ]</button>`);
+    messages.push({ role: 'assistant', content: fullText });
+
+  } catch (err) {
+    console.error('Worker error:', err);
+    body.innerHTML = `<span style="color:var(--accent2)">⚠️ Ошибка Worker: ${escHtml(err.message)}. Использую демо-режим.</span><br><br>`;
+    // fallback на демо
+    const demoText = DEMO_RESPONSES[demoIndex % DEMO_RESPONSES.length];
+    demoIndex++;
+    for (let i = 0; i <= demoText.length; i++) {
+      await new Promise(r => setTimeout(r, 10));
+      body.innerHTML = escHtml(demoText.slice(0, i)) + '<span class="stream-cursor"></span>' + '<br><br><span style="font-size:0.6rem;color:#555;">[демо-режим]</span>';
+      scrollBottom();
+    }
+    body.innerHTML = escHtml(demoText) + '<br><br><span style="font-size:0.6rem;color:#555;">[демо-режим]</span>';
+    msgEl.insertAdjacentHTML('beforeend', `<button class="weave-btn" onclick="weaveIntoNet(this)">[ Вплести в Сеть ]</button>`);
+    messages.push({ role: 'assistant', content: demoText });
+  }
+}
+
+// Демо-режим (без Worker)
+async function demoResponse() {
+  const msgEl = addMessage('ai', '', true);
+  const body  = msgEl.querySelector('.message-body');
+  const text  = DEMO_RESPONSES[demoIndex % DEMO_RESPONSES.length];
+  demoIndex++;
+
+  for (let i = 0; i <= text.length; i++) {
+    await new Promise(r => setTimeout(r, 15));
+    body.innerHTML = escHtml(text.slice(0, i)) + '<span class="stream-cursor"></span>';
+    scrollBottom();
+  }
+  
+  body.innerHTML = escHtml(text);
+  msgEl.insertAdjacentHTML('beforeend', `<button class="weave-btn" onclick="weaveIntoNet(this)">[ Вплести в Сеть ]</button>`);
+  messages.push({ role: 'assistant', content: text });
+}
+
+// Вплетение в сеть (сохранение в localStorage + Supabase в будущем)
+function weaveIntoNet(btn) {
+  btn.textContent = '[ ✓ ВПЛЕТЕНО В СЕТЬ ]';
+  btn.style.color = 'var(--accent)';
+  btn.style.borderColor = 'rgba(0,255,136,0.3)';
+  btn.disabled = true;
+  
+  try {
+    // Сохраняем в localStorage как запасной вариант
+    const nodes = JSON.parse(localStorage.getItem('unitycode_nodes') || '[]');
+    nodes.push({ 
+      id: Date.now(), 
+      timestamp: new Date().toISOString(),
+      text: btn.previousElementSibling?.textContent?.slice(0, 200) || '...' 
+    });
+    localStorage.setItem('unitycode_nodes', JSON.stringify(nodes));
+    
+    // TODO: позже добавить сохранение в Supabase
+    console.log('Узел сохранён локально');
+  } catch(e) {}
+}
+
+// Инициализация при загрузке
+initWorkerUrl();
+
+// Эффект зума для sys-msg (оставляем как было)
+(function(){
+  var el = document.querySelector('.sys-msg');
+  if(!el) return;
+  var DUR = 3200;
+  var start = null;
+
+  function curve(p) {
+    if(p < 0.35) return (p / 0.35) * 1.2;
+    var t = (p - 0.35) / 0.65;
+    return 1.2 - 0.2 * (1 - Math.pow(1 - t, 3));
+  }
+
+  var sysText = el.querySelector('.sys-text');
+  var sysTag  = el.querySelector('.sys-tag');
+
+  if(sysText) {
+    var html = sysText.innerHTML;
+    var parts = html.split(/<br\s*\/?>/i);
+    sysText.innerHTML = parts.map(function(p) {
+      return '<span class="sys-line" style="display:block">' + p + '</span>';
+    }).join('');
+  }
+  var lines = sysText ? Array.from(sysText.querySelectorAll('.sys-line')) : [];
+
+  if(sysTag) sysTag.style.transformOrigin = 'left center';
+  el.style.opacity = '0';
+  el.style.transformOrigin = 'left center';
+
+  setTimeout(function(){
+    function frame(ts) {
+      if(!start) start = ts;
+      var p = Math.min((ts - start) / DUR, 1);
+      var op = Math.min(1, p / 0.08);
+      el.style.opacity = op.toFixed(3);
+      var globalS = curve(p);
+      el.style.transform = 'scale(' + globalS.toFixed(4) + ')';
+      if(sysTag) {
+        var inv = 1 / globalS;
+        sysTag.style.transform = 'scale(' + inv.toFixed(4) + ')';
+      }
+      var returnStart = 0.38;
+      var step = 0.12;
+      lines.forEach(function(line, i) {
+        var lineStart = returnStart + i * step;
+        if(p < 0.35) {
+          line.style.transform = 'none';
+        } else if(p < lineStart) {
+          line.style.transform = 'scale(1.06)';
+          line.style.transformOrigin = 'left center';
+        } else {
+          var t = Math.min((p - lineStart) / (1 - lineStart), 1);
+          var s = 1 + 0.06 * (1 - Math.pow(t, 0.35));
+          var bright = 1 + 0.8 * Math.pow(1 - t, 3);
+          line.style.transform = 'scale(' + s.toFixed(4) + ')';
+          line.style.filter = 'brightness(' + bright.toFixed(2) + ')';
+          line.style.transformOrigin = 'left center';
+        }
+      });
+      if(p < 1) requestAnimationFrame(frame);
+      else {
+        el.style.transform = 'none';
+        el.style.opacity = '1';
+        if(sysTag) sysTag.style.transform = 'none';
+        lines.forEach(function(l) { l.style.transform = 'none'; l.style.filter = 'none'; });
+      }
+    }
+    requestAnimationFrame(frame);
+  }, 500);
+})();
+</script>
+</body>
+</html>
