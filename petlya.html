@@ -213,5 +213,57 @@ window.weaveIntoNetwork = function(btn, text) {
   }
 };
 </script>
+ ... (ваш существующий код) ...
+
+  <!-- ========== ОТЛАДОЧНАЯ ПАНЕЛЬ ========== -->
+  <div style="margin-top: 20px; padding: 15px; background: #111; border: 1px solid #f00;">
+    <h3>🧪 ОТЛАДОЧНАЯ ПАНЕЛЬ</h3>
+    <button id="debugPostBtn" style="background:#0f0; color:#000; padding:10px;">➡️ ОТПРАВИТЬ ТЕСТОВЫЙ POST</button>
+    <pre id="debugResult" style="background:#000; padding:10px; margin-top:10px; font-size:0.7rem; color:#0f0; overflow-x:auto;">Результат появится здесь...</pre>
+  </div>
+
+  <script>
+    // Отладочная кнопка — прямой вызов Worker
+    const debugBtn = document.getElementById('debugPostBtn');
+    const debugResult = document.getElementById('debugResult');
+
+    if (debugBtn) {
+      debugBtn.addEventListener('click', async () => {
+        const workerUrl = document.getElementById('workerUrl')?.value || localStorage.getItem('unitycode_worker_url');
+        
+        if (!workerUrl) {
+          debugResult.textContent = '❌ Нет URL Worker. Введите его в поле выше.';
+          return;
+        }
+        
+        debugResult.textContent = '🔄 Отправка запроса к Worker...\nURL: ' + workerUrl;
+        
+        try {
+          const response = await fetch(workerUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ raw_noise: 'Это тестовый шум для отладки. Проверка связи.' })
+          });
+          
+          const text = await response.text();
+          debugResult.textContent = '✅ Статус: ' + response.status + '\n\n📦 Ответ Worker:\n' + text;
+          
+          try {
+            const json = JSON.parse(text);
+            debugResult.textContent += '\n\n✅ JSON успешно разобран.\nsuccess: ' + json.success + '\ninterpretation: ' + (json.interpretation ? json.interpretation.substring(0, 200) + '...' : 'нет');
+          } catch(e) {
+            debugResult.textContent += '\n\n❌ Это НЕ JSON: ' + e.message;
+          }
+          
+        } catch (err) {
+          debugResult.textContent = '❌ Ошибка: ' + err.message;
+        }
+      });
+    }
+  </script>
+  <!-- ========== КОНЕЦ ОТЛАДОЧНОЙ ПАНЕЛИ ========== -->
+
+</body>
+</html> 
 </body>
 </html>
