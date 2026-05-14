@@ -1,1 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Тест Worker</title>
+    <style>
+        body { background: black; color: #0f0; font-family: monospace; padding: 20px; }
+        button { background: #0f0; color: black; padding: 10px 20px; font-size: 16px; margin: 10px; }
+        pre { background: #111; padding: 15px; border: 1px solid #333; overflow-x: auto; }
+        input { width: 400px; padding: 8px; background: #222; color: #0f0; border: 1px solid #0f0; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Тест Cloudflare Worker</h1>
+    <p>URL Worker:</p>
+    <input type="text" id="workerUrl" size="60" placeholder="https://ваш-воркер.workers.dev">
+    <br><br>
+    <button onclick="testGet()">📡 GET (проверка)</button>
+    <button onclick="testPost()">📨 POST (отправить тест)</button>
+    <hr>
+    <h3>Результат:</h3>
+    <pre id="result">Ожидание...</pre>
 
+    <script>
+        const result = document.getElementById('result');
+
+        function getWorkerUrl() {
+            const url = document.getElementById('workerUrl').value.trim();
+            if (!url) {
+                result.innerText = '❌ Введите URL Worker';
+                return null;
+            }
+            return url;
+        }
+
+        async function testGet() {
+            const url = getWorkerUrl();
+            if (!url) return;
+            
+            result.innerText = '🔄 GET запрос...';
+            try {
+                const res = await fetch(url);
+                const text = await res.text();
+                result.innerText = `✅ Статус: ${res.status}\n\n📦 Ответ:\n${text}`;
+            } catch (err) {
+                result.innerText = `❌ Ошибка: ${err.message}`;
+            }
+        }
+
+        async function testPost() {
+            const url = getWorkerUrl();
+            if (!url) return;
+            
+            result.innerText = '🔄 POST запрос...';
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ raw_noise: 'Это тестовый шум. Проверка связи.' })
+                });
+                const text = await res.text();
+                result.innerText = `✅ Статус: ${res.status}\n\n📦 Ответ Worker:\n${text}`;
+                
+                // Попробуем распарсить JSON
+                try {
+                    const json = JSON.parse(text);
+                    result.innerText += `\n\n✅ JSON разобран!\nsuccess: ${json.success}\ninterpretation: ${json.interpretation ? json.interpretation.substring(0, 200) : 'нет'}`;
+                } catch(e) {}
+            } catch (err) {
+                result.innerText = `❌ Ошибка: ${err.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
