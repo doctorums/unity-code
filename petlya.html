@@ -521,7 +521,7 @@ async function testWorker() {
       workerOk = false;
     } else {
       setDebugStatus('ok', `// ПОЛНЫЙ УСПЕХ — ${ms2}ms`);
-      debugLog(`<span class="log-ok">✓ Worker + Gemini работают (${ms2}ms)</span>`);
+      debugLog(`<span class="log-ok">✓ Worker + YndexAI работают (${ms2}ms)</span>`);
       const preview = (data.interpretation || '').slice(0, 80).replace(/\n/g, ' ');
       debugLog(`<span class="log-ok">  Ответ: ${escHtml(preview)}...</span>`);
       workerOk = true;
