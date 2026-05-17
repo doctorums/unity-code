@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UNITYCODE — Сеть</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Unbounded:wght@200;400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="shared.css">
+
+  <style>
+    body { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    body::before { display: none; }
+
+    header { flex-shrink: 0; position: fixed !important; top: 0; left: 0; right: 0; z-index: 1001 !important; background: rgba(0,0,0,0.98); }
+    .status-bar { margin-top: 57px; }
+
+    .status-bar {
+      display: flex; gap: 2rem;
+      padding: 0.6rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,0.95);
+      flex-shrink: 0; z-index: 999;
+    }
+    .stat        { display: flex; align-items: center; gap: 0.5rem; }
+    .stat-label  { font-size: 0.55rem; color: var(--dim); letter-spacing: 0.15em; text-transform: uppercase; }
+    .stat-val    { font-size: 0.7rem; color: var(--accent); }
+
+    #map { flex: 1; position: relative; z-index: 1; }
+
+    #loading {
+      position: fixed;
+      bottom: 1.2rem; left: 50%; transform: translateX(-50%);
+      z-index: 1000;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      background: rgba(0,0,0,0.85);
+      padding: 0.4rem 1rem;
+      border: 1px solid rgba(0,255,136,0.2);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    #loading.visible { opacity: 1; }
+
+    .node-marker {
+      width: 10px; height: 10px;
+      background: var(--accent); border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent), 0 0 20px rgba(0,255,136,0.3);
+      animation: node-pulse 2s ease-in-out infinite; cursor: pointer;
+    }
+    @keyframes node-pulse {
+      0%,100% { box-shadow: 0 0 10px var(--accent); }
+      50%     { box-shadow: 0 0 20px var(--accent), 0 0 40px rgba(0,255,136,0.2); }
+    }
+
+    .marker-cluster { background: rgba(0,255,136,0.12) !important; border: 1px solid rgba(0,255,136,0.4) !important; }
+    .marker-cluster div { background: rgba(0,255,136,0.2) !important; color: #00ff88 !important; font-family: 'Share Tech Mono', monospace !important; font-size: 11px !important; font-weight: normal !important; border: 1px solid rgba(0,255,136,0.6) !important; }
+    .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background: rgba(0,255,136,0.08) !important; }
+    .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div { background: rgba(0,255,136,0.15) !important; }
+
+    .leaflet-container { background: #050a05 !important; font-family: 'Share Tech Mono', monospace; }
+    .leaflet-tile-pane { filter: brightness(0.5) saturate(0) hue-rotate(120deg); }
+
+    .leaflet-popup-content-wrapper { background: rgba(0,0,0,0.95) !important; border: 1px solid rgba(0,255,136,0.3) !important; border-radius: 0 !important; color: #fff !important; padding: 0 !important; box-shadow: 0 0 20px rgba(0,255,136,0.1) !important; }
+    .leaflet-popup-tip { background: rgba(0,0,0,0.95) !important; }
+    .popup-content { padding: 1.2rem; min-width: 240px; max-width: 300px; }
+    .popup-tag     { font-size: 0.55rem; color: #00ff88; letter-spacing: 0.2em; margin-bottom: 0.6rem; }
+    .popup-text    { font-size: 0.75rem; line-height: 1.6; color: rgba(255,255,255,0.7); margin-bottom: 0.8rem; max-height: 120px; overflow-y: auto; }
+    .popup-time    { font-size: 0.55rem; color: #555; }
+    .popup-btns    { display: flex; gap: 0.5rem; margin-top: 0.8rem; flex-wrap: wrap; }
+    .popup-btn {
+      display: inline-block; padding: 0.4rem 0.8rem;
+      border: 1px solid rgba(0,255,136,0.3);
+      color: #00ff88; font-size: 0.6rem; letter-spacing: 0.1em;
+      cursor: pointer; background: transparent; text-transform: uppercase;
+      transition: background 0.2s, color 0.2s; text-decoration: none;
+      font-family: 'Share Tech Mono', monospace;
+    }
+    .popup-btn:hover { background: #00ff88; color: #000; }
+    .popup-btn.connect { border-color: rgba(0,200,255,0.4); color: #00c8ff; }
+    .popup-btn.connect:hover { background: #00c8ff; color: #000; }
+    .popup-btn:disabled { opacity: 0.4; cursor: default; }
+
+    /* Интро */
+    @keyframes tp1 {
+      0%   { transform: translateY(80vh); opacity: 0; }
+      5%   { opacity: 1; }
+      85%  { opacity: 1; transform: translateY(-30vh); }
+      100% { opacity: 0; transform: translateY(-40vh); }
+    }
+    @keyframes tp2 {
+      0%   { opacity: 0; }
+      10%  { opacity: 1; }
+      80%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to   { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Интро — поверх карты -->
+<div id="intro" onclick="skipIntro()" style="position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px);">
+
+  <div id="track1" style="position:absolute;width:90%;max-width:560px;padding:0 2rem;opacity:0;animation:tp1 20s linear forwards;">
+    <p style="font-family:monospace;font-size:16px;line-height:1.9;color:rgba(255,255,255,0.75);margin-bottom:1.2rem;">Перед тобой — карта живых узлов Сети. Каждая точка здесь — это человек, который прошёл через Петлю и создал свой личный узел. Это не аватары и не профили. Это сигналы. Следы мыслей, которые были осмыслены и вплетены в общую ткань.</p>
+    <div style="width:40px;height:1px;background:rgba(0,255,136,0.3);margin:1rem 0;"></div>
+    <p style="font-family:monospace;font-size:16px;line-height:1.9;color:rgba(255,255,255,0.75);margin-bottom:1.2rem;">Как капли дождя на перроне: сначала каждый след сам по себе, но чем дольше длится процесс, тем больше они соприкасаются. Ты видишь не просто карту. Ты видишь, как реальность учится быть единой.</p>
+  </div>
+
+  <div id="track2" style="position:absolute;width:90%;max-width:560px;padding:0 2rem;opacity:0;animation:tp2 16s ease forwards;animation-delay:20s;">
+    <p style="font-family:monospace;font-size:16px;line-height:1.9;color:rgba(255,255,255,0.75);margin-bottom:1.2rem;">Что можно сделать:</p>
+    <p style="font-family:monospace;font-size:15px;line-height:1.9;color:#00ff88;margin-bottom:1.2rem;">— Нажми на любую точку и увидишь, какой сигнал оставил этот человек. Не имя, не лицо — а мысль, прошедшую через Петлю, и рождённую в ней связь.</p>
+    <p style="font-family:monospace;font-size:15px;line-height:1.9;color:#00ff88;margin-bottom:1.2rem;">— Если этот сигнал резонирует с твоим — предложи связь. Это не лайк и не комментарий. Это приглашение к со-творчеству. Два узла, которые узнали друг друга, создают новую нить между своими трактатами.</p>
+    <p style="font-family:monospace;font-size:15px;line-height:1.9;color:#00ff88;margin-bottom:1.2rem;">— Когда связь принята, в обоих личных узлах появляется запись. Она не исчезает, не теряется. Она становится частью растущей паутины.</p>
+  </div>
+
+</div>
+
+<header>
+  <a href="index.html" class="logo">UNITYCODE // СЕТЬ</a>
+  <nav>
+    <a href="index.html">Имплант</a>
+    <a href="virus.html">Диагностика</a>
+    <a href="petlya.html">Петля</a>
+    <a href="set.html">Сеть</a>
+    <a href="kod.html">Код</a>
+  </nav>
+</header>
+
+<div class="status-bar">
+  <div class="stat"><span class="stat-label">Узлов в сети:</span><span class="stat-val" id="nodeCount">—</span></div>
+  <div class="stat"><span class="stat-label">Активны сейчас:</span><span class="stat-val" id="activeCount">1</span></div>
+  <div class="stat"><span class="stat-label">Пульс сети:</span><span class="stat-val" id="pulse">●</span></div>
+</div>
+
+<div id="map"></div>
+<div id="loading">// СИНХРОНИЗАЦИЯ...</div>
+
+<!-- Leaflet локально — без зависимости от CDN -->
+<link rel="stylesheet" href="leaflet.min.css">
+<link rel="stylesheet" href="MarkerCluster.min.css">
+<script src="leaflet.min.js" defer></script>
+<script src="leaflet.markercluster.min.js" defer></script>
+<script src="nav.js" defer></script>
+
+<script>
+const SUPABASE_URL = 'https://lukyyqabkxzrgdixzphs.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_c94zOuVnId_NFhHZgRzQ2Q_h3tljPjf';
+const REFRESH_INTERVAL = 10000;
+const INTRO_DURATION = 37000;
+
+let mapInitialized = false;
+
+// Токен на основе кодовой фразы
+async function phraseToToken(phrase) {
+  const enc = new TextEncoder().encode(phrase.trim().toLowerCase());
+  const hash = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function getUserToken() {
+  let token = localStorage.getItem('uc_token');
+  if (token) return token;
+
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = `
+      <div style="width:90%;max-width:420px;border:1px solid rgba(0,255,136,0.3);background:#050a05;padding:2rem;">
+        <div style="font-family:monospace;font-size:0.6rem;color:#00ff88;letter-spacing:0.2em;margin-bottom:1rem;">// КЛЮЧ УЗЛА</div>
+        <p style="font-family:monospace;font-size:0.8rem;line-height:1.7;color:rgba(255,255,255,0.7);margin-bottom:1.4rem;">Придумай кодовое слово или фразу. Оно позволит узнавать твои узлы на любом устройстве.</p>
+        <input id="uc-phrase-input" type="text" placeholder="твоя фраза..." style="width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(0,255,136,0.2);color:#fff;font-family:monospace;font-size:0.8rem;padding:0.6rem 0.8rem;outline:none;margin-bottom:1rem;">
+        <div style="display:flex;gap:0.8rem;">
+          <button id="uc-phrase-ok" style="flex:1;padding:0.6rem;border:1px solid #00ff88;color:#00ff88;font-family:monospace;font-size:0.7rem;letter-spacing:0.1em;background:transparent;cursor:pointer;">[ ЗАПОМНИТЬ ]</button>
+          <button id="uc-phrase-skip" style="flex:1;padding:0.6rem;border:1px solid rgba(255,255,255,0.1);color:#555;font-family:monospace;font-size:0.7rem;letter-spacing:0.1em;background:transparent;cursor:pointer;">[ пропустить ]</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    document.getElementById('uc-phrase-input').focus();
+
+    async function confirm() {
+      const phrase = document.getElementById('uc-phrase-input').value.trim();
+      document.body.removeChild(overlay);
+      let token;
+      if (phrase) {
+        token = await phraseToToken(phrase);
+      } else {
+        token = crypto.randomUUID().replace(/-/g, '');
+      }
+      localStorage.setItem('uc_token', token);
+      resolve(token);
+    }
+
+    document.getElementById('uc-phrase-ok').onclick = confirm;
+    document.getElementById('uc-phrase-skip').onclick = confirm;
+    document.getElementById('uc-phrase-input').onkeydown = e => { if (e.key === 'Enter') confirm(); };
+  });
+}
+
+// Повторный визит — сразу карта
+if (localStorage.getItem('uc_intro_seen')) {
+  document.getElementById('intro').style.display = 'none';
+}
+
+function skipIntro() {
+  localStorage.setItem('uc_intro_seen', '1');
+  const intro = document.getElementById('intro');
+  intro.style.animation = 'fadeOut 0.6s ease forwards';
+  setTimeout(() => { intro.style.display = 'none'; }, 600);
+}
+
+setTimeout(skipIntro, INTRO_DURATION);
+
+// Предложить связь
+async function proposeConnection(nodeId, btn) {
+  btn.disabled = true;
+  btn.textContent = '[ ... ]';
+
+  const myToken = await getUserToken();
+  const headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+
+  try {
+    // Запросы 1 и 2 параллельно
+    const [checkRes, myNodeRes] = await Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/nodes?id=eq.${nodeId}&select=user_token`, { headers }),
+      fetch(`${SUPABASE_URL}/rest/v1/nodes?user_token=eq.${myToken}&select=id&order=created_at.desc&limit=1`, { headers }),
+    ]);
+
+    const [rows, myNodes] = await Promise.all([checkRes.json(), myNodeRes.json()]);
+
+    if (rows[0]?.user_token === myToken) {
+      btn.textContent = '[ свой узел ]';
+      btn.style.color = '#555';
+      return;
+    }
+
+    if (!myNodes.length) {
+      btn.textContent = '[ пройди Петлю ]';
+      btn.style.color = '#00ff88';
+      btn.style.borderColor = 'rgba(0,255,136,0.3)';
+      btn.disabled = false;
+      btn.onclick = () => window.location.href = 'petlya.html';
+      return;
+    }
+
+    const fromNodeId = myNodes[0].id;
+
+    // Проверка дубликата
+    const existRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/connections?from_node_id=eq.${fromNodeId}&to_node_id=eq.${nodeId}&select=id`,
+      { headers }
+    );
+    const existing = await existRes.json();
+    if (existing.length) {
+      btn.textContent = '[ уже связано ]';
+      btn.style.color = '#555';
+      return;
+    }
+
+    // Создаём связь
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/connections`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ from_node_id: fromNodeId, to_node_id: nodeId, status: 'accepted' }),
+    });
+
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    btn.textContent = '[ ✓ связь создана ]';
+    btn.style.color = '#00c8ff';
+    btn.style.borderColor = 'rgba(0,200,255,0.4)';
+
+  } catch(e) {
+    btn.textContent = '[ ✗ ошибка ]';
+    btn.disabled = false;
+    console.warn('Connection error', e);
+  }
+}
+
+function waitForLeaflet() {
+  if (typeof L !== 'undefined' && typeof L.markerClusterGroup !== 'undefined') {
+    initMap();
+  } else {
+    setTimeout(waitForLeaflet, 50);
+  }
+}
+window.addEventListener('DOMContentLoaded', waitForLeaflet);
+
+function initMap() {
+  if (mapInitialized) return;
+  mapInitialized = true;
+
+  const map = L.map('map', {
+    center: [20, 20], zoom: 2,
+    zoomControl: false, attributionControl: false
+  });
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      map.setView([pos.coords.latitude, pos.coords.longitude], 5);
+    });
+  }
+
+  const nodeIcon = () => L.divIcon({
+    className: '', html: '<div class="node-marker"></div>',
+    iconSize: [10, 10], iconAnchor: [5, 5]
+  });
+
+  function timeAgo(iso) {
+    const diff = Math.floor((Date.now() - new Date(iso)) / 1000);
+    if (diff < 60)    return 'только что';
+    if (diff < 3600)  return Math.floor(diff / 60) + ' мин. назад';
+    if (diff < 86400) return Math.floor(diff / 3600) + ' ч. назад';
+    return Math.floor(diff / 86400) + ' дн. назад';
+  }
+
+  const cluster = L.markerClusterGroup({
+    maxClusterRadius: 50,
+    iconCreateFunction: function(c) {
+      return L.divIcon({
+        html: `<div><span>${c.getChildCount()}</span></div>`,
+        className: 'marker-cluster',
+        iconSize: [34, 34]
+      });
+    }
+  });
+  map.addLayer(cluster);
+
+  const loadedIds = new Set();
+  let lastCreatedAt = null;
+  const nodeCoords = {};
+
+  function showLoading(visible) {
+    document.getElementById('loading').classList.toggle('visible', visible);
+  }
+
+  async function loadNodes(initial = false) {
+    showLoading(true);
+    try {
+      let url = `${SUPABASE_URL}/rest/v1/nodes?select=id,created_at,raw_noise,lat,lng,user_token&lat=not.is.null&lng=not.is.null&order=created_at.desc`;
+      if (!initial && lastCreatedAt) {
+        url += `&created_at=gt.${encodeURIComponent(lastCreatedAt)}`;
+      }
+      const res = await fetch(url, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const nodes = await res.json();
+
+      nodes.forEach(node => {
+        if (loadedIds.has(node.id)) return;
+        loadedIds.add(node.id);
+        if (!lastCreatedAt || node.created_at > lastCreatedAt) lastCreatedAt = node.created_at;
+        nodeCoords[node.id] = [node.lat, node.lng];
+
+        const myToken = localStorage.getItem('uc_token') || '';
+        const isOwnNode = node.user_token === myToken;
+        const connectBtn = isOwnNode
+          ? `<span style="font-size:0.55rem;color:#555;letter-spacing:0.1em;">// ваш узел</span>`
+          : `<button class="popup-btn connect" id="popup-${node.id}" onclick="proposeConnection('${node.id}', this)">[ связать ]</button>`;
+
+        const marker = L.marker([node.lat, node.lng], { icon: nodeIcon() });
+        marker.bindPopup(`
+          <div class="popup-content">
+            <div class="popup-tag">// УЗЕЛ СЕТИ</div>
+            <div class="popup-text">${node.raw_noise}</div>
+            <div class="popup-time">${timeAgo(node.created_at)}</div>
+            <div class="popup-btns">
+              <a href="petlya.html" class="popup-btn">Петля →</a>
+              ${connectBtn}
+            </div>
+          </div>`, { className: '' });
+        cluster.addLayer(marker);
+      });
+
+      document.getElementById('nodeCount').textContent = loadedIds.size;
+    } catch (e) {
+      console.error('Supabase error:', e);
+      if (initial) document.getElementById('nodeCount').textContent = '?';
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  loadNodes(true);
+  setInterval(() => loadNodes(false), REFRESH_INTERVAL);
+
+  // Линии связей
+  const linesLayer = L.layerGroup().addTo(map);
+  const loadedConnections = new Set();
+
+  async function loadConnections() {
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/connections?select=id,from_node_id,to_node_id&status=eq.accepted`,
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } }
+      );
+      if (!res.ok) return;
+      const conns = await res.json();
+
+      conns.forEach(conn => {
+        if (loadedConnections.has(conn.id)) return;
+        const from = nodeCoords[conn.from_node_id];
+        const to   = nodeCoords[conn.to_node_id];
+        if (!from || !to) return;
+        loadedConnections.add(conn.id);
+
+        L.polyline([from, to], {
+          color: 'rgba(0,200,255,0.7)',
+          weight: 1.5,
+          dashArray: '1 8',
+          lineCap: 'round',
+        }).addTo(linesLayer);
+      });
+    } catch(e) { console.warn('Connections load error', e); }
+  }
+
+  // Ждём загрузки узлов потом рисуем линии
+  setTimeout(loadConnections, 2000);
+  setInterval(loadConnections, 30000);
+
+  let pulseState = true;
+  setInterval(() => {
+    document.getElementById('pulse').style.color = (pulseState = !pulseState) ? '#00ff88' : '#555';
+  }, 1500);
+
+  setInterval(() => {
+    document.getElementById('activeCount').textContent = Math.floor(1 + Math.random() * 8);
+  }, 5000);
+}
+</script>
+</body>
+</html>
